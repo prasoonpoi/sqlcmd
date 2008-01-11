@@ -1,0 +1,15 @@
+SQL Server:
+----
+import pymssql as dbi
+db = dbi.connect(host='goff:1433',user='sa',password='fulltilt',database='pps')
+
+
+MySQL:
+----
+import MySQLdb as dbi
+db=dbi.connect(host="condor",user="et",passwd="et",db="ExpenseTime")
+
+PostgreSQL
+----------
+import psycopg2 as dbi
+db = dbi.connect(dsn="host=condor dbname=et user=et password=et")
