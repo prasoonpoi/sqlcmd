@@ -63,7 +63,7 @@ class Cursor(object):
         self.__wrapper = wrapper
 
     def close(self):
-        exec self.__wrapper.get_import()
+        dbi = self.__wrapper.get_import()
         try:
             return self.__cursor.close()
         except dbi.Warning, val:
@@ -72,7 +72,7 @@ class Cursor(object):
             raise Error(val)
 
     def execute(self, statement, parameters=None):
-        exec self.__wrapper.get_import()
+        dbi = self.__wrapper.get_import()
         try:
             result = self.__cursor.execute(statement, parameters)
             self.rowcount = self.__cursor.rowcount
@@ -84,7 +84,7 @@ class Cursor(object):
             raise Error(val)
 
     def executemany(self, statement, *parameters):
-        exec self.__wrapper.get_import()
+        dbi = self.__wrapper.get_import()
         try:
             result = self.__cursor.executemany(statement, *parameters)
             self.rowcount = self.__cursor.rowcount
@@ -96,7 +96,7 @@ class Cursor(object):
             raise Error(val)
 
     def fetchone(self):
-        exec self.__wrapper.get_import()
+        dbi = self.__wrapper.get_import()
         try:
             return self.__cursor.fetchone()
         except dbi.Warning, val:
@@ -105,7 +105,7 @@ class Cursor(object):
             raise Error(val)
 
     def fetchall(self):
-        exec self.__wrapper.get_import()
+        dbi = self.__wrapper.get_import()
         try:
             return self.__cursor.fetchall()
         except dbi.Warning, val:
@@ -114,7 +114,7 @@ class Cursor(object):
             raise Error(val)
 
     def fetchmany(self, n):
-        exec self.__wrapper.get_import()
+        dbi = self.__wrapper.get_import()
         try:
             self.__cursor.fetchmany(n)
         except dbi.Warning, val:
@@ -141,7 +141,7 @@ class Cursor(object):
         tables.
         """
         # Default implementation
-        exec self.__wrapper.get_import()
+        dbi = self.__wrapper.get_import()
         try:
             return self.__wrapper.get_table_metadata(table, self.__cursor)
         except dbi.Warning, val:
@@ -161,7 +161,7 @@ class Cursor(object):
 
         Returns None if not supported in the underlying database
         """
-        exec self.__wrapper.get_import()
+        dbi = self.__wrapper.get_import()
         try:
             return self.__wrapper.get_index_metadata(table, self.__cursor)
         except dbi.Warning, val:
@@ -173,7 +173,7 @@ class DB(object):
     def __init__(self, db, wrapper):
         self.__db = db
         self.__wrapper = wrapper
-        exec wrapper.get_import()
+        dbi = wrapper.get_import()
         self.BINARY = dbi.BINARY
         self.NUMBER = dbi.NUMBER
         self.STRING = dbi.STRING
@@ -184,7 +184,7 @@ class DB(object):
             self.ROWID = self.NUMBER
 
     def cursor(self):
-        exec self.__wrapper.get_import()
+        dbi = self.__wrapper.get_import()
         try:
             return Cursor(self.__db.cursor(), self.__wrapper)
         except dbi.Warning, val:
@@ -193,7 +193,7 @@ class DB(object):
             raise Error(val)
 
     def commit(self):
-        exec self.__wrapper.get_import()
+        dbi = self.__wrapper.get_import()
         try:
             self.__db.commit()
         except dbi.Warning, val:
@@ -202,7 +202,7 @@ class DB(object):
             raise Error(val)
 
     def rollback(self):
-        exec self.__wrapper.get_import()
+        dbi = self.__wrapper.get_import()
         try:
             self.__db.rollback()
         except dbi.Warning, val:
@@ -211,7 +211,7 @@ class DB(object):
             raise Error(val)
 
     def close(self):
-        exec self.__wrapper.get_import()
+        dbi = self.__wrapper.get_import()
         try:
             self.__db.close()
         except dbi.Warning, val:
@@ -221,7 +221,7 @@ class DB(object):
 
 class Wrapper(object):
 
-    def get_import(self, alias="dbi"):
+    def get_import(self):
         pass
 
     def connect(self,
@@ -237,7 +237,7 @@ class Wrapper(object):
 
     def get_table_metadata(self, table, cursor):
         """Default implementation"""
-        exec self.get_import()
+        dbi = self.get_import()
         cursor.execute('SELECT * FROM %s WHERE 1=0' % table)
         result = []
         for col in cursor.description:
@@ -277,8 +277,9 @@ class Wrapper(object):
         return result
 
 class MySQLWrapper(Wrapper):
-    def get_import(self, alias="dbi"):
-	return "import MySQLdb as " + alias
+    def get_import(self):
+	import MySQLdb
+        return MySQLdb
 
     def connect(self,
                 host="localhost",
@@ -286,7 +287,7 @@ class MySQLWrapper(Wrapper):
                 user="sa",
                 password="",
                 database="default"):
-        exec self.get_import()
+        dbi = self.get_import()
         try:
             self.__db = dbi.connect(host=host, user=user, passwd=password,
                                     db=database)
@@ -297,7 +298,7 @@ class MySQLWrapper(Wrapper):
             raise Error(val)
 
     def get_index_metadata(self, table, cursor):
-        exec self.get_import()
+        dbi = self.get_import()
         cursor.execute("SHOW INDEX FROM %s" % table)
         rs = cursor.fetchone()
         result = []
@@ -328,8 +329,9 @@ class MySQLWrapper(Wrapper):
         return result
 
 class SQLServerWrapper(Wrapper):
-    def get_import(self, alias="dbi"):
-	return "import pymssql as " + alias
+    def get_import(self):
+	import pymssql
+        return pymssql
 
     def connect(self,
                 host="localhost",
@@ -337,7 +339,7 @@ class SQLServerWrapper(Wrapper):
                 user="sa",
                 password="",
                 database="default"):
-        exec self.get_import()
+        dbi = self.get_import()
         try:
             if port == None:
                 port = "1433"
@@ -353,7 +355,7 @@ class SQLServerWrapper(Wrapper):
 
     def get_table_metadata(self, table, cursor):
         """Default implementation"""
-        exec self.get_import()
+        dbi = self.get_import()
         cursor.execute("SELECT column_name, data_type, " \
                        "character_maximum_length, numeric_precision, " \
                        "numeric_scale, is_nullable "\
@@ -370,7 +372,7 @@ class SQLServerWrapper(Wrapper):
         return results
 
     def get_index_metadata(self, table, cursor):
-        exec self.get_import()
+        dbi = self.get_import()
         cursor.execute("EXEC sp_helpindex '%s'" % table)
         rs = cursor.fetchone()
         results_by_name = {}
@@ -390,8 +392,9 @@ class SQLServerWrapper(Wrapper):
         return result
 
 class PostgreSQLWrapper(Wrapper):
-    def get_import(self, alias="dbi"):
-	return "import psycopg2 as " + alias
+    def get_import(self):
+        import psycopg2
+        return psycopg2
 
     def connect(self,
                 host="localhost",
@@ -399,7 +402,7 @@ class PostgreSQLWrapper(Wrapper):
                 user="sa",
                 password="",
                 database="default"):
-        exec self.get_import()
+        dbi = self.get_import()
         try:
             dsn = 'host=%s dbname=%s user=%s password=%s' %\
                   (host, database, user, password)
@@ -411,7 +414,7 @@ class PostgreSQLWrapper(Wrapper):
             raise Error(val)
 
     def get_index_metadata(self, table, cursor):
-        exec self.get_import()
+        dbi = self.get_import()
         # First, issue one query to get the list of indexes for the table.
         index_names = self.__get_index_names(table, cursor)
 
@@ -510,8 +513,9 @@ class PostgreSQLWrapper(Wrapper):
         return desc
 
 class OracleWrapper(Wrapper):
-    def get_import(self, alias="dbi"):
-	return "import cx_Oracle as " + alias
+    def get_import(self):
+        import cx_Oracle
+        return cx_Oracle
 
     def connect(self,
                 host="localhost",
@@ -519,7 +523,7 @@ class OracleWrapper(Wrapper):
                 user="sa",
                 password="",
                 database="default"):
-        exec self.get_import()
+        dbi = self.get_import()
         try:
             self.__db = dbi.connect("%s/%s@%s" % (user, password, database))
             return DB(self.__db, self)
@@ -529,8 +533,9 @@ class OracleWrapper(Wrapper):
             raise Error(val)
 
 class DB2Wrapper(Wrapper):
-    def get_import(self, alias="dbi"):
-        return "import DB2 as " + alias
+    def get_import(self):
+        import DB2
+        return DB2
 
     def connect(self,
                 host="localhost",
@@ -541,8 +546,9 @@ class DB2Wrapper(Wrapper):
         return None # unsupported
 
 class DummyWrapper(Wrapper):
-    def get_import(self, alias="dbi"):
-	return "import dummydb as " + alias
+    def get_import(self):
+        import dummydb
+        return dummydb
 
     def connect(self,
                 host="localhost",
