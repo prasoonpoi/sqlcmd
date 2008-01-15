@@ -9,6 +9,12 @@ $Id$
 """
 import re
 import sys
+import logging
+
+__all__ = ['get_history', 'History', 'DEFAULT_MAX_LENGTH', 'logger']
+
+logger = logging.getLogger('history')
+DEFAULT_MAX_LENGTH = 512
 
 have_readline = False
 try:
@@ -31,15 +37,18 @@ def get_history(using_raw_inputter=True, verbose=True):
                              object is being used.
     """
     global have_readline
+    result = None
     if have_readline:
         if verbose:
             print 'Using readline for history management.'
-        return ReadlineHistory(using_raw_inputter)
+        result = ReadlineHistory(using_raw_inputter)
     else:
         if verbose:
             print 'Using simple history package for history management.'
-        return SimpleHistory()
+        result = SimpleHistory()
 
+    result.max_length = DEFAULT_MAX_LENGTH
+    return result
 
 class History(object):
 
@@ -70,28 +79,46 @@ class History(object):
     def get_item(self, index):
 	return None
 
+    def __get_total(self):
+        return self.get_total()
+
+    total = property(__get_total, doc="Get the total size of the history")
+
     def get_total(self):
 	return 0
 
+    def __set_max_length(self, n):
+        return self.set_max_length(n)
+
+    def __get_max_length(self):
+        return self.get_max_length()
+
+    max_length = property(__get_max_length, __set_max_length,
+                          doc="The maximum length of the history")
+
+    def get_max_length(self):
+	raise NotImplementedError
+
     def set_max_length(self, n):
-	pass
+	raise NotImplementedError
 
     def add_item(self, line):
-	pass
+	raise NotImplementedError
 
     def remove_item(self, i):
-	pass
+	raise NotImplementedError
 
     def use_raw_input(self):
 	return True
 
     def clear_history(self):
-	pass
+	raise NotImplementedError
 
     def remove_matches(self, regexp_string):
 	pat = re.compile(regexp_string)
 	buf = []
-	for i in range(1, self.get_total() + 1):
+
+	for i in range(1, self.total + 1):
 	    s = self.get_item(i)
 	    if not pat.match(s):
 		buf += [s]
@@ -99,7 +126,7 @@ class History(object):
 	self.replace_history(buf)
 
     def cut_back_to(self, index):
-	if (index > 0) and (index <= self.get_total()):
+	if (index > 0) and (index <= self.total):
 	    buf = []
 	    for i in range(1, index):
 		buf += [self.get_item(i)]
@@ -112,16 +139,23 @@ class History(object):
 	    self.add_item(s, force=True)
 
     def save_history_file(self, file):
+        logger.debug('Writing history file "%s"' % file)
 	f = open(file, "w")
-	for i in range(1, self.get_total() + 1):
+	for i in range(1, self.total + 1):
 	    f.write(self.get_item(i) + '\n')
 	f.close()
 
     def load_history_file(self, file):
+        logger.debug('Loading history file "%s"' % file)
 	f = open(file)
-	for l in f:
-	    self.add_item(l.strip(), force=True)
+        buf = []
+	for line in f:
+            buf += [line.strip()]
 	f.close()
+
+        if len(buf) > self.max_length:
+            buf = buf[-self.max_length:]
+        self.replace_history(buf)
 
 class ReadlineHistory(History):
 
@@ -147,7 +181,7 @@ class ReadlineHistory(History):
 	#    pass
 
 	buf = []
-	for i in range(1, self.get_total() + 1):
+	for i in range(1, self.total + 1):
 	    if i != index:
 		buf += self.get_item(i)
 
@@ -157,6 +191,9 @@ class ReadlineHistory(History):
 
     def clear_history(self):
 	readline.clear_history()
+
+    def get_max_length(self):
+	return readline.get_history_length()
 
     def set_max_length(self, n):
 	readline.set_history_length(n)
@@ -194,6 +231,9 @@ class SimpleHistory(History):
 
     def get_total(self):
 	return len(self.__buf)
+
+    def get_max_length(self):
+	return self.__max_length
 
     def set_max_length(self, n):
 	self.__max_length = n
