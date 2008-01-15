@@ -48,6 +48,17 @@ module. To do so:
 2. The driver's module (or the calling program) must register the driver
    with this module by calling db.add_driver()
 
+
+DB API Factory Functions
+
+The Binary(), Date(), DateFromTicks(), Time(), TimeFromTicks(), Timestamp()
+and TimestampFromTicks() DB API functions can be found in the DB class.
+Thus, to make a string into a BLOB with this API, you use:
+
+    driver = db.get_driver(driver_name)
+    db = driver.connect(...)
+    blob = db.Binary(some_string)
+
 $Id$
 """
 
@@ -391,6 +402,86 @@ class DB(object):
 
                     c.execute('SELECT * FROM Foo WHERE Bar=?', [x])
         """
+
+    def Binary(self, string):
+        """
+        Returns an object representing the given string of bytes as a BLOB.
+
+        This method is equivalent to the module-level Binary() method in an
+        underlying DB API-compliant module.
+        """
+        return self.__driver.get_import().Binary(string)
+
+    def Date(self, year, month, day):
+        """
+        Returns an object representing the specified date.
+
+        This method is equivalent to the module-level Date() method in an
+        underlying DB API-compliant module.
+        """
+        return self.__driver.get_import().Date(year, month, day)
+
+    def DateFromTicks(self, secs):
+        """
+        Returns an object representing the date 'secs' seconds after the
+        epoch. For example:
+
+            import time
+
+            d = db.DateFromTicks(time.time())
+
+        This method is equivalent to the module-level DateFromTicks()
+        method in an underlying DB API-compliant module.
+        """
+        return self.__driver.get_import().Date(year, month, day)
+
+    def Time(self, hour, minute, seconds):
+        """
+        Returns an object representing the specified time.
+
+        This method is equivalent to the module-level Time() method in an
+        underlying DB API-compliant module.
+        """
+        return self.__driver.get_import().Time(hour, minute, seconds)
+
+    def TimeFromTicks(self, secs):
+        """
+        Returns an object representing the time 'secs' seconds after the
+        epoch. For example:
+
+            import time
+
+            d = db.TimeFromTicks(time.time())
+
+        This method is equivalent to the module-level TimeFromTicks()
+        method in an underlying DB API-compliant module.
+        """
+        return self.__driver.get_import().Date(year, month, day)
+
+    def Timestamp(self, year, month, day, hour, minute, seconds):
+        """
+        Returns an object representing the specified time.
+
+        This method is equivalent to the module-level Timestamp() method in
+        an underlying DB API-compliant module.
+        """
+        return self.__driver.get_import().Timestamp(year, month, day,
+                                                    hour, minute, seconds)
+
+    def TimestampFromTicks(self, secs):
+        """
+        Returns an object representing the date and time 'secs' seconds
+        after the epoch. For example:
+
+            import time
+
+            d = db.TimestampFromTicks(time.time())
+
+        This method is equivalent to the module-level TimestampFromTicks()
+        method in an underlying DB API-compliant module.
+        """
+        return self.__driver.get_import().Date(year, month, day)
+
     def cursor(self):
         """
         Get a cursor suitable for accessing the database. The returned object
