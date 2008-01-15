@@ -17,31 +17,30 @@ $Id$
 
 import dummydb
 
-__all__ = ['DUMMY', 'MYSQL', 'POSTGRESQL', 'SQL_SERVER', 'ORACLE', 'DB2',
-           'get_driver']
+__all__ = ['get_driver', 'add_driver', 'get_driver_names']
 
-DUMMY      = "dummy"
-MYSQL      = "mysql"
-POSTGRESQL = "postgresql"
-SQL_SERVER = "sqlserver"
-ORACLE     = "oracle"
-DB2        = "db2"
+def add_driver(key, driver_class, force=False):
+    try:
+        cls = drivers[key]
+    except KeyError:
+        if not force:
+            raise ValueError, 'A DB driver named "%d" is already installed' %\
+                  key
+
+    drivers[key] = driver_class
+
+def get_driver_names():
+    return drivers.keys()
 
 def get_driver(db_type):
     """
-    Get the DB API object for the specific database type. Legal types are:
-
-    db.DUMMY       Dummy database type; does nothing.
-    db.MYSQL       MySQL, using the MySQLdb DB API module
-    db.POSTGRESQL  PostgreSQL, using the psycopg2 DB API module
-    db.SQL_SERVER  Microsoft SQL Server, using the pymssql DB API module
-    db.ORACLE      Oracle, using the cx_Oracle DB API module
-    db.DB2         Not yet supported
+    Get the DB API object for the specific database type. The list of
+    legal database types are available by calling get_driver_names()
     """
     try:
-        return TYPE_TO_CONS[db_type]()
+        return drivers[db_type]()
     except KeyError:
-        raise ValueError, "Unknown database type: %s" % db_type
+        raise ValueError, 'Unknown database type: "%s"' % db_type
     
 class Error(Exception):
     def __init__(self, value):
@@ -58,12 +57,12 @@ class Warning(Exception):
         return str(self.value)
 
 class Cursor(object):
-    def __init__(self, cursor, wrapper):
+    def __init__(self, cursor, driver):
         self.__cursor = cursor
-        self.__wrapper = wrapper
+        self.__driver = driver
 
     def close(self):
-        dbi = self.__wrapper.get_import()
+        dbi = self.__driver.get_import()
         try:
             return self.__cursor.close()
         except dbi.Warning, val:
@@ -72,7 +71,7 @@ class Cursor(object):
             raise Error(val)
 
     def execute(self, statement, parameters=None):
-        dbi = self.__wrapper.get_import()
+        dbi = self.__driver.get_import()
         try:
             result = self.__cursor.execute(statement, parameters)
             self.rowcount = self.__cursor.rowcount
@@ -84,7 +83,7 @@ class Cursor(object):
             raise Error(val)
 
     def executemany(self, statement, *parameters):
-        dbi = self.__wrapper.get_import()
+        dbi = self.__driver.get_import()
         try:
             result = self.__cursor.executemany(statement, *parameters)
             self.rowcount = self.__cursor.rowcount
@@ -96,7 +95,7 @@ class Cursor(object):
             raise Error(val)
 
     def fetchone(self):
-        dbi = self.__wrapper.get_import()
+        dbi = self.__driver.get_import()
         try:
             return self.__cursor.fetchone()
         except dbi.Warning, val:
@@ -105,7 +104,7 @@ class Cursor(object):
             raise Error(val)
 
     def fetchall(self):
-        dbi = self.__wrapper.get_import()
+        dbi = self.__driver.get_import()
         try:
             return self.__cursor.fetchall()
         except dbi.Warning, val:
@@ -114,7 +113,7 @@ class Cursor(object):
             raise Error(val)
 
     def fetchmany(self, n):
-        dbi = self.__wrapper.get_import()
+        dbi = self.__driver.get_import()
         try:
             self.__cursor.fetchmany(n)
         except dbi.Warning, val:
@@ -141,9 +140,9 @@ class Cursor(object):
         tables.
         """
         # Default implementation
-        dbi = self.__wrapper.get_import()
+        dbi = self.__driver.get_import()
         try:
-            return self.__wrapper.get_table_metadata(table, self.__cursor)
+            return self.__driver.get_table_metadata(table, self.__cursor)
         except dbi.Warning, val:
             raise Warning(val)
         except dbi.Error, val:
@@ -161,19 +160,19 @@ class Cursor(object):
 
         Returns None if not supported in the underlying database
         """
-        dbi = self.__wrapper.get_import()
+        dbi = self.__driver.get_import()
         try:
-            return self.__wrapper.get_index_metadata(table, self.__cursor)
+            return self.__driver.get_index_metadata(table, self.__cursor)
         except dbi.Warning, val:
             raise Warning(val)
         except dbi.Error, val:
             raise Error(val)
 
 class DB(object):
-    def __init__(self, db, wrapper):
+    def __init__(self, db, driver):
         self.__db = db
-        self.__wrapper = wrapper
-        dbi = wrapper.get_import()
+        self.__driver = driver
+        dbi = driver.get_import()
         self.BINARY = dbi.BINARY
         self.NUMBER = dbi.NUMBER
         self.STRING = dbi.STRING
@@ -184,16 +183,16 @@ class DB(object):
             self.ROWID = self.NUMBER
 
     def cursor(self):
-        dbi = self.__wrapper.get_import()
+        dbi = self.__driver.get_import()
         try:
-            return Cursor(self.__db.cursor(), self.__wrapper)
+            return Cursor(self.__db.cursor(), self.__driver)
         except dbi.Warning, val:
             raise Warning(val)
         except dbi.Error, val:
             raise Error(val)
 
     def commit(self):
-        dbi = self.__wrapper.get_import()
+        dbi = self.__driver.get_import()
         try:
             self.__db.commit()
         except dbi.Warning, val:
@@ -202,7 +201,7 @@ class DB(object):
             raise Error(val)
 
     def rollback(self):
-        dbi = self.__wrapper.get_import()
+        dbi = self.__driver.get_import()
         try:
             self.__db.rollback()
         except dbi.Warning, val:
@@ -211,7 +210,7 @@ class DB(object):
             raise Error(val)
 
     def close(self):
-        dbi = self.__wrapper.get_import()
+        dbi = self.__driver.get_import()
         try:
             self.__db.close()
         except dbi.Warning, val:
@@ -219,18 +218,77 @@ class DB(object):
         except dbi.Error, val:
             raise Error(val)
 
-class Wrapper(object):
+class DBDriver(object):
 
     def get_import(self):
-        pass
+        """
+        Get a bound import for the underlying DB driver.
+        """
+        raise NotImplementedError
 
+    def __display_name(self):
+        return self.get_display_name()
+
+    def get_display_name(self):
+        """
+        Get the driver's name, for display. The returned name ought to be
+        a reasonable identifier for the database (e.g., 'SQL Server',
+        'MySQL')
+        """
+        raise NotImplementedError
+
+    display_name = property(__display_name,
+                            doc='get a displayable name for the driver')
     def connect(self,
                 host="localhost",
                 port=None,
-                user="sa",
+                user=None,
                 password="",
-                database="default"):
-        pass
+                database=None):
+        """
+        Connect to the underlying database.
+
+        host     - the host where the database lives.   Default: 'localhost'
+        port     - the TCP port to use when connecting. Default: None (i.e.,
+                                                              the default port)
+        user     - the user to use when connecting.     Default: None (required)
+        password - the password to use.                 Default: Empty
+        database - the database to which to connect.    Default: None
+        """
+        dbi = self.get_import()
+        try:
+            self.__db = self.do_connect(host=host,
+                                        port=port,
+                                        user=user,
+                                        password=password,
+                                        database=database)
+            return DB(self.__db, self)
+        except dbi.Warning, val:
+            raise Warning(val)
+        except dbi.Error, val:
+            raise Error(val)
+
+    def do_connect(self,
+                   host="localhost",
+                   port=None,
+                   user="sa",
+                   password="",
+                   database="default"):
+        """
+        Connect to the actual underlying database, using the driver.
+        Subclasses must provide an implementation of this method. The
+        method must return the result of the real DB API implementation's
+        connect() method. For instance:
+
+        def do_connect():
+            dbi = self.get_import()
+            return dbi.connect(host=host, user=user, passwd=password,
+                               database=database)
+
+        There is no need to catch exceptions; the DBDriver class's
+        connect() method handles that.
+        """
+        raise NotImplementedError
 
     def get_index_metadata(self, table, cursor):
         return None
@@ -276,26 +334,22 @@ class Wrapper(object):
 
         return result
 
-class MySQLWrapper(Wrapper):
+class MySQLDriver(DBDriver):
     def get_import(self):
 	import MySQLdb
         return MySQLdb
 
-    def connect(self,
-                host="localhost",
-                port=None,
-                user="sa",
-                password="",
-                database="default"):
+    def get_display_name(self):
+        return "MySQL"
+
+    def do_connect(self,
+                   host="localhost",
+                   port=None,
+                   user="sa",
+                   password="",
+                   database="default"):
         dbi = self.get_import()
-        try:
-            self.__db = dbi.connect(host=host, user=user, passwd=password,
-                                    db=database)
-            return DB(self.__db, self)
-        except dbi.Warning, val:
-            raise Warning(val)
-        except dbi.Error, val:
-            raise Error(val)
+        return dbi.connect(host=host, user=user, passwd=password, db=database)
 
     def get_index_metadata(self, table, cursor):
         dbi = self.get_import()
@@ -328,30 +382,28 @@ class MySQLWrapper(Wrapper):
 
         return result
 
-class SQLServerWrapper(Wrapper):
+class SQLServerDriver(DBDriver):
+
     def get_import(self):
 	import pymssql
         return pymssql
 
-    def connect(self,
-                host="localhost",
-                port=None,
-                user="sa",
-                password="",
-                database="default"):
+    def get_display_name(self):
+        return "SQL Server"
+
+    def do_connect(self,
+                   host="localhost",
+                   port=None,
+                   user="sa",
+                   password="",
+                   database="default"):
         dbi = self.get_import()
-        try:
-            if port == None:
-                port = "1433"
-            self.__db = dbi.connect(host='%s:%s' % (host, port),
-                                    user=user,
-                                    password=password,
-                                    database=database)
-            return DB(self.__db, self)
-        except dbi.Warning, val:
-            raise Warning(val)
-        except dbi.Error, val:
-            raise Error(val)
+        if port == None:
+            port = "1433"
+        return dbi.connect(host='%s:%s' % (host, port),
+                           user=user,
+                           password=password,
+                           database=database)
 
     def get_table_metadata(self, table, cursor):
         """Default implementation"""
@@ -391,27 +443,24 @@ class SQLServerWrapper(Wrapper):
 
         return result
 
-class PostgreSQLWrapper(Wrapper):
+class PostgreSQLDriver(DBDriver):
     def get_import(self):
         import psycopg2
         return psycopg2
 
-    def connect(self,
-                host="localhost",
-                port=None,
-                user="sa",
-                password="",
-                database="default"):
+    def get_display_name(self):
+        return "PostgreSQL"
+
+    def do_connect(self,
+                   host="localhost",
+                   port=None,
+                   user="sa",
+                   password="",
+                   database="default"):
         dbi = self.get_import()
-        try:
-            dsn = 'host=%s dbname=%s user=%s password=%s' %\
-                  (host, database, user, password)
-            self.__db = dbi.connect(dsn=dsn)
-            return DB(self.__db, self)
-        except dbi.Warning, val:
-            raise Warning(val)
-        except dbi.Error, val:
-            raise Error(val)
+        dsn = 'host=%s dbname=%s user=%s password=%s' %\
+              (host, database, user, password)
+        return dbi.connect(dsn=dsn)
 
     def get_index_metadata(self, table, cursor):
         dbi = self.get_import()
@@ -512,58 +561,43 @@ class PostgreSQLWrapper(Wrapper):
 
         return desc
 
-class OracleWrapper(Wrapper):
+class OracleDriver(DBDriver):
     def get_import(self):
         import cx_Oracle
         return cx_Oracle
 
-    def connect(self,
-                host="localhost",
-                port=None,
-                user="sa",
-                password="",
-                database="default"):
+    def get_display_name(self):
+        return "Oracle"
+
+    def do_connect(self,
+                   host="localhost",
+                   port=None,
+                   user="sa",
+                   password="",
+                   database="default"):
         dbi = self.get_import()
-        try:
-            self.__db = dbi.connect("%s/%s@%s" % (user, password, database))
-            return DB(self.__db, self)
-        except dbi.Warning, val:
-            raise Warning(val)
-        except dbi.Error, val:
-            raise Error(val)
+        return dbi.connect("%s/%s@%s" % (user, password, database))
 
-class DB2Wrapper(Wrapper):
-    def get_import(self):
-        import DB2
-        return DB2
-
-    def connect(self,
-                host="localhost",
-                port=None,
-                user="sa",
-                password="",
-                database="default"):
-        return None # unsupported
-
-class DummyWrapper(Wrapper):
+class DummyDriver(DBDriver):
     def get_import(self):
         import dummydb
         return dummydb
 
-    def connect(self,
-                host="localhost",
-                port=None,
-                user="sa",
-                password="",
-                database="default"):
-        self.__db = dummydb.DummyDB()
-        return DB(self.__db, self)
+    def get_display_name(self):
+        return "Dummy"
+
+    def do_connect(self,
+                   host="localhost",
+                   port=None,
+                   user="sa",
+                   password="",
+                   database="default"):
+        return dummydb.DummyDB()
 
 # This must be at the bottom so it "sees" the classes it references
 
-TYPE_TO_CONS = { DUMMY      : DummyWrapper,
-                 MYSQL      : MySQLWrapper,
-                 POSTGRESQL : PostgreSQLWrapper,
-                 SQL_SERVER : SQLServerWrapper,
-                 ORACLE     : OracleWrapper,
-                 DB2        : DB2Wrapper }
+drivers = { "dummy"      : DummyDriver,
+            "mysql"      : MySQLDriver,
+            "postgresql" : PostgreSQLDriver,
+            "sqlserver"  : SQLServerDriver,
+            "oracle"     : OracleDriver }
