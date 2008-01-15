@@ -19,6 +19,7 @@ import tempfile
 import time
 import textwrap
 import traceback
+import logging
 from getopt import getopt, GetoptError
 
 # enum is available from http://cheeseshop.python.org/pypi/enum/
@@ -33,6 +34,8 @@ try:
     set
 except NameError:
     from sets import Set as set, ImmutableSet as frozenset
+
+logger = None
 
 # ---------------------------------------------------------------------------
 
@@ -57,11 +60,11 @@ BOOL_STRS = { "on"    : True,
 
 def traced(func):
     def wrapper(*__args,**__kw):
-        print "[%s] entering %s" % (time.strftime('%H:%M:%S'), func)
+        logger.debug("entering %s" % (func))
         try:
             return func(*__args,**__kw)
         finally:
-            print "[%s] exiting %s" % (time.strftime('%H:%M:%S'), func)
+            logger.debug("exit %s" % (func))
 
     wrapper.__name__ = func.__name__
     wrapper.__dict__ = func.__dict__
@@ -162,7 +165,7 @@ class Configuration(object):
 		self.__config[alias] = cfg
 
 	f.close()
-        
+
     def add(self, alias, host, port, database, type, user, password):
         try:
             self.__config[alias]
@@ -219,7 +222,7 @@ class NonFatalError(Exception):
 
     def __str__(self):
         return str(self.value)
-    
+
 class NotConnectedError(NonFatalError):
     """
     Thrown to indicate that a SQL operation is attempted when there's no
@@ -272,7 +275,7 @@ class Variable(object):
             self.value = new_value
             if self.on_change != None:
                 self.on_change(self)
-        
+
     def str_value(self):
         if self.type == SQLCmd.VAR_TYPES.boolean:
             if self.value:
@@ -337,7 +340,6 @@ class SQLCmd(Cmd):
             if var.value == True:
                 # Autocommit changed
                 db = self.__db
-                print db
                 if db != None:
                     print "Autocommit enabled. Committing current transaction."
                     db.commit()
@@ -408,6 +410,7 @@ class SQLCmd(Cmd):
         assert(config_item != None)
 	self.__db_config = config_item
 
+    @traced
     def precmd(self, s):
 	s = s.strip()
 	tokens = s.split(None, 1)
@@ -449,7 +452,7 @@ class SQLCmd(Cmd):
                     error('%s' % str(ex))
                     if self.__flag_is_set('stacktrace'):
                         traceback.print_exc()
-                
+
             s = ""
 	    need_semi = False
 	elif s == "EOF":
@@ -760,7 +763,7 @@ class SQLCmd(Cmd):
 
         names = self.__VARS.keys()
         names.sort()
-        prefix = '        ' 
+        prefix = '        '
         desc_width = 79 - name_width - len(prefix) - 2
         wrapper = textwrap.TextWrapper(width=desc_width)
         for name in names:
@@ -771,7 +774,7 @@ class SQLCmd(Cmd):
             print '%s%-*s  %s' % (prefix, name_width, v.name, desc[0])
             for s in desc[1:]:
                 print '%s%-*s  %s' % (prefix, name_width, ' ', s)
-                
+
 
     def default(self, s):
 	print 'Unknown command: "%s"' % s
@@ -1058,7 +1061,7 @@ class SQLCmd(Cmd):
 
     def __init_history(self):
 	self.__history = history.get_history()
-	self.__history.set_max_length(SQLCmd.DEFAULT_HISTORY_MAX)
+	self.__history.max_length = SQLCmd.DEFAULT_HISTORY_MAX
 	self.use_rawinput = self.__history.use_raw_input()
 
         if self.__history_file != None:
@@ -1101,9 +1104,9 @@ class SQLCmd(Cmd):
         if self.__db != None:
             self.__save_history()
 
-	print 'Connecting to %s database "%s" on host %s.' %\
-	      (db_config.db_type, db_config.database, db_config.host)
         driver = db.get_driver(db_config.db_type)
+	print 'Connecting to %s database "%s" on host %s.' %\
+	      (driver.display_name, db_config.database, db_config.host)
 	self.__db = driver.connect(host=db_config.host,
                                    port=db_config.port,
                                    user=db_config.user,
@@ -1120,6 +1123,12 @@ class SQLCmd(Cmd):
 
 # ---------------------------------------------------------------------------
 
+LOG_LEVELS = { 'debug'    : logging.DEBUG,
+               'info'     : logging.INFO,
+               'warning'  : logging.WARNING,
+               'error'    : logging.ERROR,
+               'critical' : logging.CRITICAL }
+
 def usage(msg=None):
     if msg:
         sys.stderr.write(msg + '\n\n')
@@ -1133,10 +1142,15 @@ If "@file" is specified, it is assumed to contain SQL statements to be run.
 
 OPTIONS
 
--d   database,dbtype,host[:port],user,password       -or-
---db database,dbtype,host[:port],user,password
-
-''' % (os.path.basename(sys.argv[0]), os.environ["HOME"]))
+-d            database,dbtype,host[:port],user,password       -or-
+--db          database,dbtype,host[:port],user,password
+--loglevel n  Enable log messages at level "n", where "n" is one of:
+              %s
+--logfile f   Dump log messages (if any) to the specified file, instead
+              of standard output.
+''' % (os.path.basename(sys.argv[0]),
+       os.environ["HOME"],
+       ', '.join(LOG_LEVELS.keys())))
     sys.exit(1)
 
 class Args(object):
@@ -1144,7 +1158,10 @@ class Args(object):
 
 def parse_params(argv):
     try:
-        opts, args = getopt(argv, 'd:', ['db=']);
+        opts, args = getopt(argv, 'd:l:L:',
+                            ['db=',
+                             'loglevel=',
+                             'logfile=']);
 
     except GetoptError, ex:
         sys.stderr.write(`ex` + '\n')
@@ -1155,13 +1172,16 @@ def parse_params(argv):
 
     result = Args()
     result.db_on_command_line = False
+    result.log_level = None
+    result.log_file = None
     arg_db = None
+
     for o, a in opts:
         if o in ("--db", "-d"):
             arg_db = a.split(',')
             if len(arg_db) != 5:
                 usage("Not enough tokens in argument to -d option\n")
-            
+
             result.db_on_command_line = True
             result.database = arg_db[0]
             result.database_type = arg_db[1]
@@ -1172,6 +1192,16 @@ def parse_params(argv):
             result.host = h[0]
             result.user = arg_db[3]
             result.password = arg_db[4]
+            continue
+
+        if o == "--loglevel":
+            if not (a in LOG_LEVELS.keys()):
+                usage('Bad log level: "%s"' % a)
+            result.log_level = LOG_LEVELS[a]
+            continue
+
+        if o == "--logfile":
+            result.log_file = a
             continue
 
     result.alias = None
@@ -1197,9 +1227,27 @@ def parse_params(argv):
 
     return result
 
+def init_logging(level, file):
+    """Initialize logging subsystem"""
+    global logger
+    logger = logging.getLogger('sqlcmd')
+    if file == None:
+        hdlr = logging.StreamHandler(sys.stdout)
+    else:
+        hdlr = logging.FileHandler(file)
+
+    if level != None:
+        formatter = logging.Formatter('%(asctime)s %(levelname)s (%(name)s) %(message)s', '%T')
+        hdlr.setFormatter(formatter)
+        root_logger = logging.getLogger(None)
+        root_logger.addHandler(hdlr)
+        root_logger.setLevel(level)
+
 if __name__ == "__main__":
 
     params = parse_params(sys.argv[1:])
+
+    init_logging(params.log_level, params.log_file)
 
     cfg = Configuration()
     try:
