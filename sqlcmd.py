@@ -1,12 +1,48 @@
+#!/usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 """
 sqlcmd - a simple SQL command interpreter
-$Id$
 
 Requires:
 
 - One or more Python DB API drivers. See 'db.py'
 - The enum package, from http://cheeseshop.python.org/pypi/enum/
 - Python 2.3 or better
+
+COPYRIGHT AND LICENSE
+
+Copyright © 2008 Brian M. Clapper
+
+This is free software, released under the following BSD-like license:
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+
+2. The end-user documentation included with the redistribution, if any,
+   must include the following acknowlegement:
+
+      This product includes software developed by Brian M. Clapper
+      (bmc@clapper.org, http://www.clapper.org/bmc/). That software is
+      copyright © 2008 Brian M. Clapper.
+
+    Alternately, this acknowlegement may appear in the software itself, if
+    and wherever such third-party acknowlegements normally appear.
+
+THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+EVENT SHALL BRIAN M. CLAPPER BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+
+$Id$
 """
 from cmd import Cmd
 import sys
@@ -42,7 +78,7 @@ logger = None
 RC_FILE = os.path.expanduser("~/.sqlcmd")
 VERSION = "0.2"
 INTRO = '''SQLCmd, version %s ($Revision$)
-Copyright (c) 2008 Brian M. Clapper.
+Copyright © 2008 Brian M. Clapper.
 
 Type "help" or "?" for help.
 ''' % VERSION
@@ -98,24 +134,24 @@ class DBInstanceConfigItem(object):
     .sqlcmd file in the user's home directory.
     """
     def __init__(self, aliases, host, database, user, password, type, port):
-	self.aliases = aliases
-	self.primary_alias = aliases[0]
-	self.host = host
-	self.database = database
-	self.user = user
-	self.password = password
-	self.port = port
-	self.db_type = type
+        self.aliases = aliases
+        self.primary_alias = aliases[0]
+        self.host = host
+        self.database = database
+        self.user = user
+        self.password = password
+        self.port = port
+        self.db_type = type
 
     def __hash__(self):
-	return self.alias.__hash__()
+        return self.alias.__hash__()
 
     def __str__(self):
-	return 'host=%s, db=%s, type=%s' %\
-	       (self.host, self.database, self.db_type)
+        return 'host=%s, db=%s, type=%s' %\
+               (self.host, self.database, self.db_type)
 
     def __repr__(self):
-	return self.__str__()
+        return self.__str__()
 
 class Configuration(object):
     """ Data from the .sqlcmd file in the user's home directory"""
@@ -128,43 +164,43 @@ class Configuration(object):
 
     def load_file(self, file):
         f = open(file)
-	i = 0
-	for line in f:
-	    i += 1
-	    line = line.strip()
-	    if (len(line) == 0) or line.startswith('#'):
-		continue
+        i = 0
+        for line in f:
+            i += 1
+            line = line.strip()
+            if (len(line) == 0) or line.startswith('#'):
+                continue
 
-	    tokens = line.split()
-	    total = len(tokens)
-	    if (total != 6) and (total != 7):
-		raise ConfigurationError, \
-		      'File "%s", line %d: Wrong number of tokens. ' \
-		      'Expected 6 or 7, found %d.' %\
-		      (file, i, total)
+            tokens = line.split()
+            total = len(tokens)
+            if (total != 6) and (total != 7):
+                raise ConfigurationError, \
+                      'File "%s", line %d: Wrong number of tokens. ' \
+                      'Expected 6 or 7, found %d.' %\
+                      (file, i, total)
 
-	    aliases = tokens[0].split(',')
-	    if total == 7:
-		port = tokens[6]
-	    else:
-		port = None
+            aliases = tokens[0].split(',')
+            if total == 7:
+                port = tokens[6]
+            else:
+                port = None
 
-	    try:
-		cfg = DBInstanceConfigItem(aliases,
+            try:
+                cfg = DBInstanceConfigItem(aliases,
                                            tokens[1],
                                            tokens[2],
                                            tokens[3],
                                            tokens[4],
                                            tokens[5],
                                            port);
-	    except ValueError, msg:
-		raise ConfigurationError, 'File "%s", line %d: %s' %\
+            except ValueError, msg:
+                raise ConfigurationError, 'File "%s", line %d: %s' %\
                       (file, i, msg)
 
-	    for alias in aliases:
-		self.__config[alias] = cfg
+            for alias in aliases:
+                self.__config[alias] = cfg
 
-	f.close()
+        f.close()
 
     def add(self, alias, host, port, database, type, user, password):
         try:
@@ -174,16 +210,16 @@ class Configuration(object):
         except KeyError:
             pass
 
-	    try:
-		cfg = DBInstanceConfigItem([alias],
+            try:
+                cfg = DBInstanceConfigItem([alias],
                                            host,
                                            database,
                                            user,
                                            password,
                                            type,
                                            port)
-	    except ValueError, msg:
-		raise ConfigurationError, \
+            except ValueError, msg:
+                raise ConfigurationError, \
                       'Error in configuration for alias "%s": %s' % (alias, msg)
             self.__config[alias] = cfg
 
@@ -191,10 +227,10 @@ class Configuration(object):
         return self.__config[alias]
 
     def find_match(self, alias):
-	try:
-	    config_item = self.__config[alias]
+        try:
+            config_item = self.__config[alias]
             # Exact match. Use that one.
-	except KeyError:
+        except KeyError:
             # No match. Try to find one or more that come close.
             matches = 0
             for a in self.__config.keys():
@@ -322,12 +358,12 @@ class SQLCmd(Cmd):
     VAR_TYPES = Enum('boolean', 'string', 'integer')
 
     def __init__(self, cfg):
-	Cmd.__init__(self)
-	self.prompt = "? "
-	self.__config = cfg
-	self.__db = None
-	self.__partial_cmd = None
-	self.__partial_cmd_history_start = None
+        Cmd.__init__(self)
+        self.prompt = "? "
+        self.__config = cfg
+        self.__db = None
+        self.__partial_cmd = None
+        self.__partial_cmd_history_start = None
         self.__db_config = None
         self.__history_file = None
         self.__echo_sql = True
@@ -385,16 +421,16 @@ class SQLCmd(Cmd):
 
     def onecmd(self, line):
         stop = False
-	try:
-	    stop = Cmd.onecmd(self, line)
-	except NonFatalError, ex:
-	    error('%s' % str(ex))
+        try:
+            stop = Cmd.onecmd(self, line)
+        except NonFatalError, ex:
+            error('%s' % str(ex))
             if self.__flag_is_set('stacktrace'):
                 traceback.print_exc()
         except db.Warning, ex:
-	    warning('%s' % str(ex))
+            warning('%s' % str(ex))
         except db.Error, ex:
-	    error('%s' % str(ex))
+            error('%s' % str(ex))
             if self.__flag_is_set('stacktrace'):
                 traceback.print_exc()
             if self.__db != None: # mostly a hack for PostgreSQL
@@ -402,18 +438,18 @@ class SQLCmd(Cmd):
                     self.__db.rollback()
                 except db.Error:
                     pass
-	return stop
-	
+        return stop
+        
     def set_database(self, database_alias):
-	assert self.__config != None
+        assert self.__config != None
         config_item = self.__config.find_match(database_alias)
         assert(config_item != None)
-	self.__db_config = config_item
+        self.__db_config = config_item
 
     @traced
     def precmd(self, s):
-	s = s.strip()
-	tokens = s.split(None, 1)
+        s = s.strip()
+        tokens = s.split(None, 1)
         if len(tokens) == 0:
             return s
 
@@ -435,8 +471,8 @@ class SQLCmd(Cmd):
 
         self.__scrub_history()
 
-	need_semi = not first in SQLCmd.NO_SEMI_NEEDED;
-	if first.startswith(SQLCmd.COMMENT_PREFIX):
+        need_semi = not first in SQLCmd.NO_SEMI_NEEDED;
+        if first.startswith(SQLCmd.COMMENT_PREFIX):
             # Comments are handled specially. Rather than transform them
             # into something that'll invoke a "do" method, we handle them
             # directly here, then return an empty string. That way, the
@@ -454,10 +490,10 @@ class SQLCmd(Cmd):
                         traceback.print_exc()
 
             s = ""
-	    need_semi = False
-	elif s == "EOF":
-	    skip_history = True
-	    need_semi = False
+            need_semi = False
+        elif s == "EOF":
+            skip_history = True
+            need_semi = False
         else:
             s = ' '.join([first] + tokens[1:])
 
@@ -470,32 +506,32 @@ class SQLCmd(Cmd):
 
         if s == "":
             pass
-	elif need_semi and (s[-1] != ';'):
-	    if self.__partial_cmd == None:
-		self.__partial_cmd = s
-		self.__partial_cmd_history_start = self.__history.get_total()
-	    else:
-		self.__partial_cmd = self.__partial_cmd + ' ' + s
-	    s = ""
-	    self.prompt = "> "
+        elif need_semi and (s[-1] != ';'):
+            if self.__partial_cmd == None:
+                self.__partial_cmd = s
+                self.__partial_cmd_history_start = self.__history.get_total()
+            else:
+                self.__partial_cmd = self.__partial_cmd + ' ' + s
+            s = ""
+            self.prompt = "> "
             self.__in_multiline_command = True
 
-	else:
+        else:
             self.__in_multiline_command = False
-	    if self.__partial_cmd != None:
-		s = self.__partial_cmd + ' ' + s
-		self.__partial_cmd = None
-		self.__history.cut_back_to(self.__partial_cmd_history_start)
-		self.__partial_cmd_history_start = None
-		self.__history.add_item(s, force=True)
+            if self.__partial_cmd != None:
+                s = self.__partial_cmd + ' ' + s
+                self.__partial_cmd = None
+                self.__history.cut_back_to(self.__partial_cmd_history_start)
+                self.__partial_cmd_history_start = None
+                self.__history.add_item(s, force=True)
 
             # Strip the trailing ';'
             if s[-1] == ';':
                 s = s[:-1]
 
-	    self.prompt = "? "
+            self.prompt = "? "
 
-	return s
+        return s
 
     def do_load(self, args):
         """
@@ -506,7 +542,7 @@ class SQLCmd(Cmd):
                @ file
                @file
         """
-	tokens = args.split(None, 1)
+        tokens = args.split(None, 1)
         if len(tokens) > 1:
             raise BadCommandError, 'Too many arguments to "load" ("@")'
 
@@ -525,7 +561,7 @@ class SQLCmd(Cmd):
         where 'database_alias' is a valid database alias from the .sqlcmd
         startup file.
         """
-	tokens = args.split(None, 1)
+        tokens = args.split(None, 1)
         if len(tokens) > 1:
             raise BadCommandError, 'Too many arguments to "connect"'
 
@@ -545,7 +581,7 @@ class SQLCmd(Cmd):
 
         Usage: h
         """
-	self.__show_history()
+        self.__show_history()
 
     def do_hist(self, args):
         """
@@ -554,7 +590,7 @@ class SQLCmd(Cmd):
 
         Usage: hist
         """
-	self.__show_history()
+        self.__show_history()
 
     def do_history(self, args):
         """
@@ -563,7 +599,7 @@ class SQLCmd(Cmd):
 
         Usage: history
         """
-	self.__show_history()
+        self.__show_history()
 
     def do_r(self, args):
         """
@@ -575,37 +611,37 @@ class SQLCmd(Cmd):
         'history' display. If 'num' is omitted, re-run the most previously
         run command.
         """
-	a = args.split()
-	if len(a) > 1:
-	    raise BadCommandError, 'Too many parameters to "r" command.'
+        a = args.split()
+        if len(a) > 1:
+            raise BadCommandError, 'Too many parameters to "r" command.'
 
-	if len(a) == 0:
-	    # Redo last command.
-	    line = self.__history.get_last_item()
-	else:
-	    try:
-		line = self.__history.get_item(int(a[0]))
-	    except ValueError:
-		line = self.__history.get_last_matching_item(a[0])
+        if len(a) == 0:
+            # Redo last command.
+            line = self.__history.get_last_item()
+        else:
+            try:
+                line = self.__history.get_item(int(a[0]))
+            except ValueError:
+                line = self.__history.get_last_matching_item(a[0])
 
-	if line == None:
-	    print "No match."
-	else:
-	    print line
+        if line == None:
+            print "No match."
+        else:
+            print line
             # Temporarily turn off SQL echo. If this is a SQL command,
             # we just echoed it, and we don't want it to be echoed twice.
 
             echo = self.__flag_is_set('echo')
             self.__set_var('echo', False)
-	    self.cmdqueue += [line]
+            self.cmdqueue += [line]
             self.__set_var('echo', echo)
 
     def do_select(self, args):
-	"""
+        """
         Run a SQL 'SELECT' statement.
         """
         self.__ensure_connected()
-	cursor = self.__db.cursor()
+        cursor = self.__db.cursor()
         try:
             self.__handle_select(args, cursor)
         finally:
@@ -614,11 +650,11 @@ class SQLCmd(Cmd):
             self.__db.commit()
 
     def do_show(self, args):
-	"""
+        """
         Run a SQL 'SELECT' statement.
         """
         self.__ensure_connected()
-	cursor = self.__db.cursor()
+        cursor = self.__db.cursor()
         try:
             self.__handle_select(args, cursor, command='show')
         finally:
@@ -627,37 +663,37 @@ class SQLCmd(Cmd):
             self.__db.commit()
 
     def do_insert(self, args):
-	"""
+        """
         Run a SQL 'INSERT' statement.
         """
         self.__handle_update('insert', args)
 
     def do_update(self, args):
-	"""
+        """
         Run a SQL 'UPDATE' statement.
         """
         self.__handle_update('update', args)
 
     def do_delete(self, args):
-	"""
+        """
         Run a SQL 'DELETE' statement.
         """
         self.__handle_update('update', args)
 
     def do_create(self, args):
-	"""
+        """
         Run a SQL 'CREATE' statement (e.g., 'CREATE TABLE', 'CREATE INDEX')
         """
         self.__handle_update('create', args)
 
     def do_drop(self, args):
-	"""
+        """
         Run a SQL 'DROP' statement (e.g., 'DROP TABLE', 'DROP INDEX')
         """
         self.__handle_update('drop', args)
 
     def do_begin(self, args):
-	"""
+        """
         Begin a SQL transaction. This command is essentially a no-op: It's
         ignored in autocommit mode, and irrelevant when autocommit mode is
         off. It's there primarily for SQL scripts.
@@ -732,7 +768,7 @@ class SQLCmd(Cmd):
                 warning('%s' % str(ex))
             except db.Error, ex:
                 error('%s' % str(ex))
-	return True
+        return True
 
     def do_set(self, args):
         """
@@ -777,16 +813,16 @@ class SQLCmd(Cmd):
 
 
     def default(self, s):
-	print 'Unknown command: "%s"' % s
+        print 'Unknown command: "%s"' % s
 
     def emptyline(self):
-	pass
+        pass
 
     def __handle_structured_comment(self, args):
         tokens = args.split()
         if tokens[0] == 'set':
             self.__handle_set(tokens[1:])
-	pass
+        pass
 
     def __show_vars(self):
         width = 0
@@ -845,7 +881,7 @@ class SQLCmd(Cmd):
                 self.__db.commit()
 
     def __handle_select(self, args, cursor, command="select"):
-	fd, temp = tempfile.mkstemp(".dat", "sqlcmd")
+        fd, temp = tempfile.mkstemp(".dat", "sqlcmd")
         self.__exec_sql(cursor, '%s %s' % (command, args))
         rows = cursor.rowcount
         pl = ""
@@ -958,14 +994,14 @@ class SQLCmd(Cmd):
         print ''
         f.close()
 
-	try:
-	    os.remove(temp)
+        try:
+            os.remove(temp)
             os.close(fd)
-	except:
-	    pass
+        except:
+            pass
 
     def __handle_describe(self, args, cursor):
-	a = args.split()
+        a = args.split()
         if not len(a) in (1, 2):
             raise BadCommandError, 'Usage: describe table [full]'
 
@@ -1060,9 +1096,9 @@ class SQLCmd(Cmd):
             print '\nExecution time: %5.3f seconds'  % total_elapsed
 
     def __init_history(self):
-	self.__history = history.get_history()
-	self.__history.max_length = SQLCmd.DEFAULT_HISTORY_MAX
-	self.use_rawinput = self.__history.use_raw_input()
+        self.__history = history.get_history()
+        self.__history.max_length = SQLCmd.DEFAULT_HISTORY_MAX
+        self.use_rawinput = self.__history.use_raw_input()
 
         if self.__history_file != None:
             try:
@@ -1083,10 +1119,10 @@ class SQLCmd(Cmd):
                                  (HISTORY_FILE, message))
 
     def __show_history(self):
-	self.__history.show()
+        self.__history.show()
 
     def __scrub_history(self):
-	self.__history.remove_matches('^' + SQLCmd.COMMENT_PREFIX + r'\s')
+        self.__history.remove_matches('^' + SQLCmd.COMMENT_PREFIX + r'\s')
 
     def __load_file(self, file):
         f = None
@@ -1105,17 +1141,17 @@ class SQLCmd(Cmd):
             self.__save_history()
 
         driver = db.get_driver(db_config.db_type)
-	print 'Connecting to %s database "%s" on host %s.' %\
-	      (driver.display_name, db_config.database, db_config.host)
-	self.__db = driver.connect(host=db_config.host,
+        print 'Connecting to %s database "%s" on host %s.' %\
+              (driver.display_name, db_config.database, db_config.host)
+        self.__db = driver.connect(host=db_config.host,
                                    port=db_config.port,
                                    user=db_config.user,
                                    password=db_config.password,
                                    database=db_config.database)
 
-	history_file = '~/.sqlcmd_%s' % db_config.primary_alias
-	self.__history_file = os.path.expanduser(history_file)
-	self.__init_history()
+        history_file = '~/.sqlcmd_%s' % db_config.primary_alias
+        self.__history_file = os.path.expanduser(history_file)
+        self.__init_history()
 
     def __ensure_connected(self):
         if self.__db == None:
@@ -1274,10 +1310,10 @@ if __name__ == "__main__":
 
         cmd = SQLCmd(cfg)
         cmd.save_history = save_history
+        cmd.set_database(params.alias)
     except ConfigurationError, ex:
         die(str(ex))
 
-    cmd.set_database(params.alias)
     if params.file:
         try:
             cmd.run_file(params.file)
