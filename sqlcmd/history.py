@@ -217,12 +217,17 @@ class ReadlineHistory(History):
 	    if i != index:
 		buf += self.getItem(i)
 
-	readline.clearHistory()
+	self.clearHistory()
 	for s in buf:
 	    readline.add_history(s)
 
     def clearHistory(self):
-	readline.clear_history()
+        try:
+            readline.clear_history()
+        except AttributeError:
+            len = self.getMaxLength()
+            readline.set_history_length(0)
+            readline.set_history_length(len)
 
     def getMaxLength(self):
 	return readline.get_history_length()
