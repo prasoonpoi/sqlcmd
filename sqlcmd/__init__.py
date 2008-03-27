@@ -1220,7 +1220,7 @@ class Main(object):
         try:
             saveHistory = True
             if self.__dbConnectInfo:
-                (db, dbType, hp, user, pw) = self.__dbConnectInfo.split(',')
+                (db, dbType, hp, user, pw) = self.__dbConnectInfo
                 host = hp
                 port = None
                 if ':' in hp:
