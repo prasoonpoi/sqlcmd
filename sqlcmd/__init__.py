@@ -551,7 +551,7 @@ class SQLCmd(Cmd):
             if self.__partialCommand != None:
                 s = self.__partialCommand + ' ' + s
                 self.__partialCommand = None
-                self.__history.cutBack_to(self.__partialCmdHistoryStart)
+                self.__history.cutBackTo(self.__partialCmdHistoryStart)
                 self.__partialCmdHistoryStart = None
                 self.__history.addItem(s, force=True)
 
