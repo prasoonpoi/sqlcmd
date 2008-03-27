@@ -77,6 +77,14 @@ except NameError:
 # Exports
 # ---------------------------------------------------------------------------
 
+# Info about the module
+__version__   = '0.1'
+__author__    = 'Brian Clapper'
+__email__     = 'bmc@clapper.org'
+__url__       = 'http://www.clapper.org/software/python/paragrep/'
+__copyright__ = '© 1989-2008 Brian M. Clapper'
+__license__   = 'BSD-style license'
+
 __all__ = ['SQLCmd', 'main']
 
 # ---------------------------------------------------------------------------
@@ -84,12 +92,11 @@ __all__ = ['SQLCmd', 'main']
 # ---------------------------------------------------------------------------
 
 RC_FILE = os.path.expanduser("~/.sqlcmd")
-VERSION = "0.2"
 INTRO = '''SQLCmd, version %s ($Revision$)
-Copyright © 2008 Brian M. Clapper.
+Copyright 2008 Brian M. Clapper.
 
 Type "help" or "?" for help.
-''' % VERSION
+''' % __version__
 
 BOOL_STRS = { "on"    : True,
               "off"   : False,
@@ -1261,7 +1268,6 @@ class Main(object):
         options, args = optParser.parseArgs(argv)
 
         args = args[1:]
-        print args
         if not len(args) in [0, 1]:
             optParser.showUsage('Incorrect number of parameters')
 
