@@ -60,7 +60,7 @@ import time
 import textwrap
 import traceback
 import logging
-from grizzled.optparser import CommandLineParser
+from grizzled.cmdline import CommandLineParser
 
 # enum is available from http://cheeseshop.python.org/pypi/enum/
 
