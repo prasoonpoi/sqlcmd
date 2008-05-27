@@ -495,7 +495,7 @@ class SQLCmd(Cmd):
         # the raw inputter is in use and readline is available, the
         # item will already be in the history by the time the handler
         # is called.)
-        self.__history.addItem(s)
+        self.__history.add_item(s)
 
         # Now, scrub non-structured comments from the history.
 
@@ -539,7 +539,7 @@ class SQLCmd(Cmd):
         elif need_semi and (s[-1] != ';'):
             if self.__partialCommand == None:
                 self.__partialCommand = s
-                self.__partialCmdHistoryStart = self.__history.getTotal()
+                self.__partialCmdHistoryStart = self.__history.get_total()
             else:
                 self.__partialCommand = self.__partialCommand + ' ' + s
             s = ""
@@ -551,9 +551,9 @@ class SQLCmd(Cmd):
             if self.__partialCommand != None:
                 s = self.__partialCommand + ' ' + s
                 self.__partialCommand = None
-                self.__history.cutBackTo(self.__partialCmdHistoryStart)
+                self.__history.cut_back_to(self.__partialCmdHistoryStart)
                 self.__partialCmdHistoryStart = None
-                self.__history.addItem(s, force=True)
+                self.__history.add_item(s, force=True)
 
             # Strip the trailing ';'
             if s[-1] == ';':
@@ -647,12 +647,12 @@ class SQLCmd(Cmd):
 
         if len(a) == 0:
             # Redo last command.
-            line = self.__history.getLastItem()
+            line = self.__history.get_last_item()
         else:
             try:
-                line = self.__history.getItem(int(a[0]))
+                line = self.__history.get_item(int(a[0]))
             except ValueError:
-                line = self.__history.getLastMatchingItem(a[0])
+                line = self.__history.get_last_matching_item(a[0])
 
         if line == None:
             print "No match."
@@ -1043,7 +1043,7 @@ class SQLCmd(Cmd):
                 full = True
 
         table = a[0]
-        results = cursor.getTableMetadata(table)
+        results = cursor.get_table_metadata(table)
         width = 0
         for col in results:
             name = col[0]
@@ -1087,7 +1087,7 @@ class SQLCmd(Cmd):
 
         if full:
             print '\n--------\nIndexes:\n--------\n'
-            indexes = cursor.getIndexMetadata(table)
+            indexes = cursor.get_index_metadata(table)
             if indexes == None:
                 print 'No indexes.'
             else:
@@ -1126,13 +1126,13 @@ class SQLCmd(Cmd):
             print '\nExecution time: %5.3f seconds'  % total_elapsed
 
     def __initHistory(self):
-        self.__history = history.getHistory()
-        self.__history.maxLength = SQLCmd.DEFAULT_HISTORY_MAX
-        self.use_rawinput = self.__history.useRawInput()
+        self.__history = history.get_history()
+        self.__history.max_length = SQLCmd.DEFAULT_HISTORY_MAX
+        self.use_rawinput = self.__history.use_raw_input()
 
         if self.__historyFile != None:
             try:
-                self.__history.loadHistoryFile(self.__historyFile)
+                self.__history.load_history_file(self.__historyFile)
             except IOError:
                 pass
 
@@ -1143,7 +1143,7 @@ class SQLCmd(Cmd):
         if (self.__historyFile != None) and (self.saveHistory):
             try:
                 print 'Saving history file "%s"' % self.__historyFile
-                self.__history.saveHistoryFile(self.__historyFile)
+                self.__history.save_history_file(self.__historyFile)
             except IOError, (errno, message):
                 sys.stderr.write('Unable to save history file "%s": %s\n' % \
                                  (HISTORY_FILE, message))
@@ -1152,7 +1152,7 @@ class SQLCmd(Cmd):
         self.__history.show()
 
     def __scrubHistory(self):
-        self.__history.removeMatches('^' + SQLCmd.COMMENT_PREFIX + r'\s')
+        self.__history.remove_matches('^' + SQLCmd.COMMENT_PREFIX + r'\s')
 
     def __loadFile(self, file):
         f = None
