@@ -1256,16 +1256,16 @@ class Main(object):
     def __parseParams(self, argv):
         USAGE = 'Usage: %s [OPTIONS] [alias] [@file]'
         optParser = CommandLineParser(usage=USAGE)
-        optParser.addOption('-d', '--db', action='store', dest='database',
-                            help='database,dbtype,host[:port],user,password')
-        optParser.addOption('-l', '--loglevel', action='store',
-                            dest='loglevel',
-                            help='Enable log messages as level "n", where ' \
-                                 '"n" is one of: %s' % ', '.join(LOG_LEVELS))
-        optParser.addOption('-L', '--logfile', action='store', dest='logfile',
-                            help='Dump log messages to LOGFILE, instead of ' \
-                                 'standard output')
-        options, args = optParser.parseArgs(argv)
+        optParser.add_option('-d', '--db', action='store', dest='database',
+                             help='database,dbtype,host[:port],user,password')
+        optParser.add_option('-l', '--loglevel', action='store',
+                             dest='loglevel',
+                             help='Enable log messages as level "n", where ' \
+                                  '"n" is one of: %s' % ', '.join(LOG_LEVELS))
+        optParser.add_option('-L', '--logfile', action='store', dest='logfile',
+                             help='Dump log messages to LOGFILE, instead of ' \
+                                  'standard output')
+        options, args = optParser.parse_args(argv)
 
         args = args[1:]
         if not len(args) in [0, 1]:
@@ -1292,21 +1292,21 @@ class Main(object):
         else:
             alias = args[0]
             if not args[1].startswith('@'):
-                optParser.showUsage('File parameter must start with "@"')
+                optParser.show_usage('File parameter must start with "@"')
             self.__inputFile = args[1][1:]
 
         if options.database:
             self.__dbConnectInfo = options.database.split(',')
             if len(self.__dbConnectInfo) != 5:
-                optParser.showUsage('Bad argument "%s" to -d option' %\
-                                    options.database)
+                optParser.show_usage('Bad argument "%s" to -d option' %\
+                                     options.database)
 
         if not (self.__dbConnectInfo or self.__alias):
-            optParser.showUsage('You must specify either an alias or a '
-                                'valid argument to "-d"')
+            optParser.show_usage('You must specify either an alias or a '
+                                 'valid argument to "-d"')
 
         if self.__dbConnectInfo and self.__alias:
-            optParser.showUsage('You cannot specify both an alias and "-d"')
+            optParser.show_usage('You cannot specify both an alias and "-d"')
 
     def __initLogging(self, level, file):
         """Initialize logging subsystem"""
