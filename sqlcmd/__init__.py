@@ -1170,9 +1170,9 @@ class SQLCmd(Cmd):
         if self.__db != None:
             self.__saveHistory()
 
-        driver = db.getDriver(dbConfig.db_type)
+        driver = db.get_driver(dbConfig.db_type)
         print 'Connecting to %s database "%s" on host %s.' %\
-              (driver.displayName, dbConfig.database, dbConfig.host)
+              (driver.display_name, dbConfig.database, dbConfig.host)
         self.__db = driver.connect(host=dbConfig.host,
                                    port=dbConfig.port,
                                    user=dbConfig.user,
