@@ -708,7 +708,7 @@ class SQLCmd(Cmd):
         """
         Run a SQL 'DELETE' statement.
         """
-        self.__handleUpdate('update', args)
+        self.__handleUpdate('delete', args)
 
     def do_create(self, args):
         """
