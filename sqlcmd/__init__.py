@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: iso-8859-1 -*-
+#
+# $Id$
 """
 sqlcmd - a simple SQL command interpreter
 

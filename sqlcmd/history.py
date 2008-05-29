@@ -1,3 +1,5 @@
+# $Id$
+
 """
 Wrapper for command-line history capability. Hides direct access to
 GNU Readline, and provides a simple fallback history mechanism in case
