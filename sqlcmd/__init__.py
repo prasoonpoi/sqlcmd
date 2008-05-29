@@ -7,9 +7,10 @@ sqlcmd - a simple SQL command interpreter
 
 Requires:
 
-- One or more Python DB API drivers. See 'db.py'
+- The Grizzled Python API (http://www.clapper.org/software/python/grizzled/)
+- One or more Python DB API drivers. See the Grizzled "db" package.
 - The enum package, from http://cheeseshop.python.org/pypi/enum/
-- Python 2.3 or better
+- Python 2.5 or better
 
 COPYRIGHT AND LICENSE
 
