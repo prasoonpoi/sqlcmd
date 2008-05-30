@@ -56,25 +56,20 @@ import sys
 import os.path
 import os
 import history
-from grizzled import db
 import cPickle
 import tempfile
 import time
 import textwrap
 import traceback
 import logging
+
+from grizzled import db, system
 from grizzled.cmdline import CommandLineParser
+from grizzled.config import Configuration
 
 # enum is available from http://cheeseshop.python.org/pypi/enum/
 
 from enum import Enum
-
-# use the built-in 'set' type if using Python 2.4 or better. Otherwise, use
-# the old sets module.
-try:
-    set
-except NameError:
-    from sets import Set as set, ImmutableSet as frozenset
 
 # ---------------------------------------------------------------------------
 # Exports
@@ -168,7 +163,7 @@ class DBInstanceConfigItem(object):
     """
     def __init__(self, aliases, host, database, user, password, type, port):
         self.aliases = aliases
-        self.primaryAlias = aliases[0]
+        self.primary_alias = aliases[0]
         self.host = host
         self.database = database
         self.user = user
@@ -176,8 +171,13 @@ class DBInstanceConfigItem(object):
         self.port = port
         self.db_type = type
 
+    @property
+    def db_key(self):
+        port = self.port if self.port else ''
+        return '%s|%s|%s' % (self.host, self.port, self.database)
+
     def __hash__(self):
-        return self.alias.__hash__()
+        return self.primary_alias.__hash__()
 
     def __str__(self):
         return 'host=%s, db=%s, type=%s' %\
@@ -186,60 +186,70 @@ class DBInstanceConfigItem(object):
     def __repr__(self):
         return self.__str__()
 
-class Configuration(object):
+class SQLCmdConfig(object):
     """ Data from the .sqlcmd file in the user's home directory"""
 
     def __init__(self):
         self.__config = {}
 
-    def totalDatabases(self):
+    def total_databases(self):
         return len(self.__config.keys())
 
-    def loadFile(self, file):
-        f = open(file)
-        i = 0
-        for line in f:
-            i += 1
-            line = line.strip()
-            if (len(line) == 0) or line.startswith('#'):
-                continue
+    def load_file(self, file):
+        cfg = Configuration()
+        cfg.read(file)
 
-            tokens = line.split()
-            total = len(tokens)
-            if (total != 6) and (total != 7):
-                raise ConfigurationError, \
-                      'File "%s", line %d: Wrong number of tokens. ' \
-                      'Expected 6 or 7, found %d.' %\
-                      (file, i, total)
+        for section in cfg.sections:
+            if section.startswith('db.'):
+                # This is a database configuration.
+                self.__config_db(cfg, section)
 
-            aliases = tokens[0].split(',')
-            if total == 7:
-                port = tokens[6]
-            else:
-                port = None
+            elif section.startswith('driver.'):
+                # Database driver configuration
+                self.__config_driver(cfg, section)
+                
+    def __config_db(self, cfg, section):
+        aliases = cfg.get(section, 'names')
+        aliases = aliases.split(',')
+        if not aliases:
+            raise ConfigurationError, 'No names for database [%s]' % section
 
-            try:
-                cfg = DBInstanceConfigItem(aliases,
-                                           tokens[1],
-                                           tokens[2],
-                                           tokens[3],
-                                           tokens[4],
-                                           tokens[5],
-                                           port);
-            except ValueError, msg:
-                raise ConfigurationError, 'File "%s", line %d: %s' %\
-                      (file, i, msg)
+        aliases = [a.strip() for a in aliases]
 
-            for alias in aliases:
-                self.__config[alias] = cfg
+        host = cfg.get(section, 'host')
+        port = cfg.get(section, 'port', optional=True)
+        db_name = cfg.get(section, 'database')
+        user = cfg.get(section, 'user')
+        password = cfg.get(section, 'password')
+        db_type = cfg.get(section, 'type')
 
-        f.close()
+        try:
+            cfg_item = DBInstanceConfigItem(aliases,
+                                            host,
+                                            db_name,
+                                            user,
+                                            password,
+                                            db_type,
+                                            port)
+        except ValueError, msg:
+            raise ConfigurationError, \
+                  'Configuration section [%s]: %s' % (section, msg)
+
+        for alias in aliases:
+            self.__config[alias] = cfg_item
+
+    def __config_driver(self, cfg, section):
+        class_name = cfg.get(section, 'class')
+        cls = system.class_for_name(class_name)
+        name = cfg.get(section, 'name')
+        db.add_driver(name, cls)
 
     def add(self, alias, host, port, database, type, user, password):
         try:
             self.__config[alias]
-            raise ValueError, \
+            raise ConfigurationError, \
                   'Alias "%s" is already in the configuration' % alias
+
         except KeyError:
             pass
 
@@ -259,26 +269,29 @@ class Configuration(object):
     def get(self, alias):
         return self.__config[alias]
 
-    def findMatch(self, alias):
+    def find_match(self, alias):
         try:
-            configItem = self.__config[alias]
+            config_item = self.__config[alias]
             # Exact match. Use that one.
         except KeyError:
             # No match. Try to find one or more that come close.
-            matches = 0
+            matches = {}
             for a in self.__config.keys():
                 if a.startswith(alias):
-                    configItem = self.__config[a]
-                    matches += 1
+                    config_item = self.__config[a]
+                    matches[config_item.db_key] = config_item
 
-            if matches == 0:
+            total_matches = len(matches)
+            if total_matches == 0:
                 raise ConfigurationError, \
                       'No configuration item for database "%s"' % alias
-            if matches > 1:
+            if total_matches > 1:
                 raise ConfigurationError, \
-                      '%d databases match partial alias "%s"' % (matches, alias)
+                      '%d databases match partial alias "%s"' %\
+                      (total_matches, alias)
+            config_item = matches.values()[0]
 
-        return configItem
+        return config_item
 
 class NonFatalError(Exception):
     """
@@ -395,15 +408,15 @@ class SQLCmd(Cmd):
         self.prompt = "? "
         self.__config = cfg
         self.__db = None
-        self.__partialCommand = None
-        self.__partialCmdHistoryStart = None
-        self.__dbConfig = None
-        self.__historyFile = None
-        self.__echoSQL = True
+        self.__partial_command = None
+        self.__partial_cmd_history_start = None
+        self.__db_config = None
+        self.__history_file = None
+        self.__echo_SQL = True
         self.__VARS = {}
         self.__interactive = True
-        self.__inMultilineCommand = False
-        self.saveHistory = True
+        self.__in_multiline_command = False
+        self.save_history = True
 
         def autocommitChanged(var):
             if var.value == True:
@@ -432,7 +445,7 @@ class SQLCmd(Cmd):
         for v in vars:
             self.__VARS[v.name] = v
 
-    def runFile(self, file):
+    def run_file(self, file):
         self.__load_file(file)
         self.cmdqueue += ["eof"]
         self.__interactive = False
@@ -447,8 +460,8 @@ class SQLCmd(Cmd):
 
         print INTRO
 
-        if self.__dbConfig != None:
-            self.__connectTo(self.__dbConfig)
+        if self.__db_config != None:
+            self.__connect_to(self.__db_config)
         else:
             self.__init_history()
 
@@ -473,11 +486,11 @@ class SQLCmd(Cmd):
                     pass
         return stop
 
-    def setDatabase(self, databaseAlias):
+    def set_database(self, database_alias):
         assert self.__config != None
-        configItem = self.__config.findMatch(databaseAlias)
-        assert(configItem != None)
-        self.__dbConfig = configItem
+        config_item = self.__config.find_match(database_alias)
+        assert(config_item != None)
+        self.__db_config = config_item
 
     @traced
     def precmd(self, s):
@@ -491,7 +504,7 @@ class SQLCmd(Cmd):
         else:
             first = tokens[0]
 
-        if not self.__inMultilineCommand:
+        if not self.__in_multiline_command:
             first = first.lower()
 
         # Done here to simulate what raw inputter does. (That is, if
@@ -540,22 +553,22 @@ class SQLCmd(Cmd):
         if s == "":
             pass
         elif need_semi and (s[-1] != ';'):
-            if self.__partialCommand == None:
-                self.__partialCommand = s
-                self.__partialCmdHistoryStart = self.__history.get_total()
+            if self.__partial_command == None:
+                self.__partial_command = s
+                self.__partial_cmd_history_start = self.__history.get_total()
             else:
-                self.__partialCommand = self.__partialCommand + ' ' + s
+                self.__partial_command = self.__partial_command + ' ' + s
             s = ""
             self.prompt = "> "
-            self.__inMultilineCommand = True
+            self.__in_multiline_command = True
 
         else:
-            self.__inMultilineCommand = False
-            if self.__partialCommand != None:
-                s = self.__partialCommand + ' ' + s
-                self.__partialCommand = None
-                self.__history.cut_back_to(self.__partialCmdHistoryStart)
-                self.__partialCmdHistoryStart = None
+            self.__in_multiline_command = False
+            if self.__partial_command != None:
+                s = self.__partial_command + ' ' + s
+                self.__partial_command = None
+                self.__history.cut_back_to(self.__partial_cmd_history_start)
+                self.__partial_cmd_history_start = None
                 self.__history.add_item(s, force=True)
 
             # Strip the trailing ';'
@@ -603,9 +616,9 @@ class SQLCmd(Cmd):
                 self.__db.close()
             except db.Error:
                 pass
-            self.setDatabase(tokens[0])
-            assert(self.__dbConfig != None)
-            self.__connectTo(self.__dbConfig)
+            self.set_database(tokens[0])
+            assert(self.__db_config != None)
+            self.__connect_to(self.__db_config)
 
     def do_h(self, args):
         """
@@ -614,7 +627,7 @@ class SQLCmd(Cmd):
 
         Usage: h
         """
-        self.__show_History()
+        self.__show_history()
 
     def do_hist(self, args):
         """
@@ -623,7 +636,7 @@ class SQLCmd(Cmd):
 
         Usage: hist
         """
-        self.__show_History()
+        self.__show_history()
 
     def do_history(self, args):
         """
@@ -632,7 +645,7 @@ class SQLCmd(Cmd):
 
         Usage: history
         """
-        self.__show_History()
+        self.__show_history()
 
     def do_r(self, args):
         """
@@ -673,7 +686,7 @@ class SQLCmd(Cmd):
         """
         Run a SQL 'SELECT' statement.
         """
-        self.__ensureConnected()
+        self.__ensure_connected()
         cursor = self.__db.cursor()
         try:
             self.__handle_select(args, cursor)
@@ -686,7 +699,7 @@ class SQLCmd(Cmd):
         """
         Run a SQL 'SELECT' statement.
         """
-        self.__ensureConnected()
+        self.__ensure_connected()
         cursor = self.__db.cursor()
         try:
             if args.lower() == 'tables':
@@ -739,14 +752,14 @@ class SQLCmd(Cmd):
         ignored in autocommit mode, and irrelevant when autocommit mode is
         off. It's there primarily for SQL scripts.
         """
-        self.__ensureConnected()
+        self.__ensure_connected()
 
     def do_commit(self, args):
         """
         Commit the current transaction. Ignored if 'autocommit' is enabled.
         (Autocommit is enabled by default.)
         """
-        self.__ensureConnected()
+        self.__ensure_connected()
         if self.__flag_is_set('autocommit'):
             warning('Autocommit is enabled. "commit" ignored')
         else:
@@ -758,7 +771,7 @@ class SQLCmd(Cmd):
         Roll the current transaction back. Ignored if 'autocommit' is enabled.
         (Autocommit is enabled by default.)
         """
-        self.__ensureConnected()
+        self.__ensure_connected()
         if self.__flag_is_set('autocommit'):
             warning('Autocommit is enabled. "rollback" ignored')
         else:
@@ -787,7 +800,7 @@ class SQLCmd(Cmd):
         as well (assuming the underlying DB driver supports retrieving
         index metadata).
         """
-        self.__ensureConnected()
+        self.__ensure_connected()
         cursor = self.__db.cursor()
         try:
             self.__handle_describe(args, cursor)
@@ -1141,9 +1154,9 @@ class SQLCmd(Cmd):
         self.__history.max_length = SQLCmd.DEFAULT_HISTORY_MAX
         self.use_rawinput = self.__history.use_raw_input()
 
-        if self.__historyFile != None:
+        if self.__history_file != None:
             try:
-                self.__history.load_history_file(self.__historyFile)
+                self.__history.load_history_file(self.__history_file)
             except IOError:
                 pass
 
@@ -1151,15 +1164,15 @@ class SQLCmd(Cmd):
         return self.__VARS[varname].value
 
     def __save_history(self):
-        if (self.__historyFile != None) and (self.saveHistory):
+        if (self.__history_file != None) and (self.save_history):
             try:
-                print 'Saving history file "%s"' % self.__historyFile
-                self.__history.save_history_file(self.__historyFile)
+                print 'Saving history file "%s"' % self.__history_file
+                self.__history.save_history_file(self.__history_file)
             except IOError, (errno, message):
                 sys.stderr.write('Unable to save history file "%s": %s\n' % \
                                  (HISTORY_FILE, message))
 
-    def __show_History(self):
+    def __show_history(self):
         self.__history.show()
 
     def __scrub_history(self):
@@ -1177,24 +1190,24 @@ class SQLCmd(Cmd):
             if f != None:
                 f.close()
 
-    def __connectTo(self, dbConfig):
+    def __connect_to(self, db_config):
         if self.__db != None:
             self.__save_history()
 
-        driver = db.get_driver(dbConfig.db_type)
+        driver = db.get_driver(db_config.db_type)
         print 'Connecting to %s database "%s" on host %s.' %\
-              (driver.display_name, dbConfig.database, dbConfig.host)
-        self.__db = driver.connect(host=dbConfig.host,
-                                   port=dbConfig.port,
-                                   user=dbConfig.user,
-                                   password=dbConfig.password,
-                                   database=dbConfig.database)
+              (driver.display_name, db_config.database, db_config.host)
+        self.__db = driver.connect(host=db_config.host,
+                                   port=db_config.port,
+                                   user=db_config.user,
+                                   password=db_config.password,
+                                   database=db_config.database)
 
-        historyFile = '~/.sqlcmd_%s' % dbConfig.primaryAlias
-        self.__historyFile = os.path.expanduser(historyFile)
+        history_file = '~/.sqlcmd_%s' % db_config.primary_alias
+        self.__history_file = os.path.expanduser(history_file)
         self.__init_history()
 
-    def __ensureConnected(self):
+    def __ensure_connected(self):
         if self.__db == None:
             raise NotConnectedError, 'Not connected to a database.'
 
@@ -1210,17 +1223,17 @@ class Main(object):
         pass
 
     def run(self, argv):
-        self.__parseParams(argv)
+        self.__parse_params(argv)
 
         # Initialize logging
 
-        self.__initLogging(self.__logLevel, self.__logFile)
+        self.__init_logging(self.__logLevel, self.__logFile)
 
         # Load the configuration
 
-        cfg = Configuration()
+        cfg = SQLCmdConfig()
         try:
-            cfg.loadFile(RC_FILE)
+            cfg.load_file(RC_FILE)
         except IOError, ex:
             warning(str(ex))
         except ConfigurationError, ex:
@@ -1229,7 +1242,7 @@ class Main(object):
         # Load the history
 
         try:
-            saveHistory = True
+            save_history = True
             if self.__dbConnectInfo:
                 (db, dbType, hp, user, pw) = self.__dbConnectInfo
                 host = hp
@@ -1245,26 +1258,26 @@ class Main(object):
                         user,
                         pw)
                 self.__alias = "__cmdline__"
-                saveHistory = False
+                save_history = False
 
             assert(self.__alias)
 
             cmd = SQLCmd(cfg)
-            cmd.saveHistory = saveHistory
-            cmd.setDatabase(self.__alias)
+            cmd.save_history = save_history
+            cmd.set_database(self.__alias)
         except ConfigurationError, ex:
             die(str(ex))
 
         if self.__inputFile:
             try:
-                cmd.runFile(self.__inputFile)
+                cmd.run_file(self.__inputFile)
             except IOError, (ex, errormsg):
                 die('Failed to load file "%s": %s' %\
                     (self.__inputFile, errormsg))
         else:
             cmd.cmdloop()
 
-    def __parseParams(self, argv):
+    def __parse_params(self, argv):
         USAGE = 'Usage: %s [OPTIONS] [alias] [@file]'
         optParser = CommandLineParser(usage=USAGE)
         optParser.add_option('-d', '--db', action='store', dest='database',
@@ -1319,7 +1332,7 @@ class Main(object):
         if self.__dbConnectInfo and self.__alias:
             optParser.show_usage('You cannot specify both an alias and "-d"')
 
-    def __initLogging(self, level, file):
+    def __init_logging(self, level, file):
         """Initialize logging subsystem"""
         global log
         log = logging.getLogger('sqlcmd')
