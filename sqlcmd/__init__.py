@@ -62,6 +62,7 @@ import time
 import textwrap
 import traceback
 import logging
+from StringIO import StringIO
 
 from grizzled import db, system
 from grizzled.cmdline import CommandLineParser
@@ -936,6 +937,8 @@ class SQLCmd(Cmd):
 
     def __handle_select(self, args, cursor, command="select"):
         fd, temp = tempfile.mkstemp(".dat", "sqlcmd")
+        os.close(fd)
+
         self.__exec_SQL(cursor, '%s %s' % (command, args))
         rows = cursor.rowcount
         pl = ""
@@ -945,50 +948,7 @@ class SQLCmd(Cmd):
         if rows == 0:
             return
 
-        col_names = []
-        col_sizes = []
-        for col in cursor.description:
-            col_names += [col[0]]
-            name_size = len(col[0])
-            if col[1] == self.__db.BINARY:
-                col_sizes += [max(name_size, len(SQLCmd.BINARY_VALUE_MARKER))]
-            else:
-                col_sizes += [name_size]
-
-        # Write the results (pickled) to a temporary file. We'll iterate
-        # through them twice: Once to calculate the column sizes, the
-        # second time to display them.
-
-        if rows > 1000:
-            print "Processing result set..."
-
-        max_binary = self.__VARS['binarymax'].value
-        if max_binary < 0:
-            max_binary = sys.maxint
-
-        f = open(temp, "w")
-        rs = cursor.fetchone()
-        while rs != None:
-            cPickle.dump(rs, f)
-            i = 0
-            for col_value in rs:
-                col_info = cursor.description[i]
-                type = col_info[1]
-                if type == self.__db.BINARY:
-                    if self.__flag_is_set('showbinary'):
-                        size = len(col_value.translate(SQLCmd.BINARY_FILTER))
-                        size = min(size, max_binary)
-                    else:
-                        size = len(SQLCmd.BINARY_VALUE_MARKER)
-                else:
-                    size = len(str(col_value))
-
-                col_sizes[i] = max(col_sizes[i], size)
-                i += 1
-
-            rs = cursor.fetchone()
-
-        f.close()
+        col_names, col_sizes = self.__calculate_column_sizes(cursor, temp)
 
         # Now, dump the header with the column names, being sure to
         # honor the padding sizes.
@@ -1053,6 +1013,53 @@ class SQLCmd(Cmd):
             os.close(fd)
         except:
             pass
+
+    def __calculate_column_sizes(self, cursor, temp_file):
+        col_names = []
+        col_sizes = []
+        for col in cursor.description:
+            col_names += [col[0]]
+            name_size = len(col[0])
+            if col[1] == self.__db.BINARY:
+                col_sizes += [max(name_size, len(SQLCmd.BINARY_VALUE_MARKER))]
+            else:
+                col_sizes += [name_size]
+
+        # Write the results (pickled) to a temporary file. We'll iterate
+        # through them twice: Once to calculate the column sizes, the
+        # second time to display them.
+
+        if rows > 1000:
+            print "Processing result set..."
+
+        max_binary = self.__VARS['binarymax'].value
+        if max_binary < 0:
+            max_binary = sys.maxint
+
+        f = open(temp, "w")
+        rs = cursor.fetchone()
+        while rs != None:
+            cPickle.dump(rs, f)
+            i = 0
+            for col_value in rs:
+                col_info = cursor.description[i]
+                type = col_info[1]
+                if type == self.__db.BINARY:
+                    if self.__flag_is_set('showbinary'):
+                        size = len(col_value.translate(SQLCmd.BINARY_FILTER))
+                        size = min(size, max_binary)
+                    else:
+                        size = len(SQLCmd.BINARY_VALUE_MARKER)
+                else:
+                    size = len(str(col_value))
+
+                col_sizes[i] = max(col_sizes[i], size)
+                i += 1
+
+            rs = cursor.fetchone()
+
+        f.close()
+        return (col_names, col_sizes)
 
     def __handle_describe(self, args, cursor):
         a = args.split()
@@ -1156,6 +1163,7 @@ class SQLCmd(Cmd):
 
         if self.__history_file != None:
             try:
+                print 'Loading history file "%s"' % self.__history_file
                 self.__history.load_history_file(self.__history_file)
             except IOError:
                 pass
@@ -1285,7 +1293,8 @@ class Main(object):
         optParser.add_option('-l', '--loglevel', action='store',
                              dest='loglevel',
                              help='Enable log messages as level "n", where ' \
-                                  '"n" is one of: %s' % ', '.join(LOG_LEVELS))
+                                  '"n" is one of: %s' % ', '.join(LOG_LEVELS),
+                             default='info')
         optParser.add_option('-L', '--logfile', action='store', dest='logfile',
                              help='Dump log messages to LOGFILE, instead of ' \
                                   'standard output')
