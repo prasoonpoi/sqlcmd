@@ -1029,14 +1029,14 @@ class SQLCmd(Cmd):
         # through them twice: Once to calculate the column sizes, the
         # second time to display them.
 
-        if rows > 1000:
+        if cursor.rowcount > 1000:
             print "Processing result set..."
 
         max_binary = self.__VARS['binarymax'].value
         if max_binary < 0:
             max_binary = sys.maxint
 
-        f = open(temp, "w")
+        f = open(temp_file, "w")
         rs = cursor.fetchone()
         while rs != None:
             cPickle.dump(rs, f)
