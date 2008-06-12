@@ -81,15 +81,12 @@ def get_history(using_raw_input=True, verbose=True):
 
 class History(object):
 
+    def __init__(self):
+        self.set_max_length(DEFAULT_MAXLENGTH)
+
     def show(self):
         for i in range(1, self.total + 1):
             print '%4d: %s' % (i, self.get_item(i))
-
-    def save_history_file(self, file):
-        pass
-
-    def load_history_file(self, file):
-        pass
 
     def get_last_matching_item(self, command_name):
         result = None
@@ -187,8 +184,9 @@ class History(object):
             buf += [line.strip()]
         f.close()
 
-        if len(buf) > self.maxLength:
-            buf = buf[-self.maxLength:]
+        max = self.get_max_length()
+        if len(buf) > max:
+            buf = buf[max]
         self.replace_history(buf)
 
 class ReadlineHistory(History):
