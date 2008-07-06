@@ -384,6 +384,7 @@ class SQLCmd(Cmd):
 
     DEFAULT_HISTORY_MAX = 512
     COMMENT_PREFIX = '--'
+    META_COMMAND_PREFIX = '.'
     BINARY_VALUE_MARKER = "<binary>"
     BINARY_FILTER = ''.join([(len(repr(chr(x)))==3) and chr(x) or '?'
                              for x in range(256)])
@@ -525,19 +526,20 @@ class SQLCmd(Cmd):
             # directly here, then return an empty string. That way, the
             # Cmd class's help functions don't notice and expose to view
             # special comment methods.
-
-            if len(first) > 2:
-                # Structured comment.
-                s = ' '.join([first[2:]] + tokens[1:])
-                try:
-                    self.__handle_structured_comment(s)
-                except NonFatalError, ex:
-                    error('%s' % str(ex))
-                    if self.__flag_is_set('stacktrace'):
-                        traceback.print_exc()
-
-            s = ""
             need_semi = False
+            s = ''
+
+        elif first.startswith(SQLCmd.META_COMMAND_PREFIX):
+            # The ".set" command and other meta-commands.
+            s = ' '.join([first[len(SQLCmd.META_COMMAND_PREFIX):]] + tokens[1:])
+            try:
+                self.__handle_metacommand(s)
+            except NonFatalError, ex:
+                error('%s' % str(ex))
+                if self.__flag_is_set('stacktrace'):
+                    traceback.print_exc()
+            need_semi = False
+
         elif s == "EOF":
             skip_history = True
             need_semi = False
@@ -873,7 +875,7 @@ class SQLCmd(Cmd):
     def emptyline(self):
         pass
 
-    def __handle_structured_comment(self, args):
+    def __handle_metacommand(self, args):
         tokens = args.split()
         if tokens[0] == 'set':
             self.__handle_set(tokens[1:])
