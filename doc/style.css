@@ -1,0 +1,32 @@
+/*
+:Author: Brian M. Clapper
+:Contact: bmc@clapper.org
+:Copyright: Public domain
+
+Docutils style sheet
+*/
+
+@import url(html4css1.css);
+
+.title
+{
+    font-family: sans-serif;
+}
+
+.subtitle
+{
+    font-style: italic;
+    font-family: sans-serif;
+}
+
+p.topic-title
+{
+    font-size: 200%;
+    font-weight: bold;
+    margin-left: 0em;
+}
+
+div.topic
+{
+  margin: 0em;
+}

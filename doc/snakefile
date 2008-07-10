@@ -1,0 +1,14 @@
+# Snakefile to build Snake documents.
+#
+# $Id: snakefile 7700 2008-06-02 02:34:18Z bmc $
+# ---------------------------------------------------------------------------
+
+from grizzled import os
+%%
+
+all -> users_guide.html
+clean:
+    rm('*.html')
+
+users_guide.html -> users_guide.rst, style.css:
+    rst2html('users_guide.rst', target.name, stylesheet='style.css')
