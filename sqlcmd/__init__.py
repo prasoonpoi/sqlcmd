@@ -435,7 +435,6 @@ class SQLCmd(Cmd):
         self.__partial_cmd_history_start = None
         self.__db_config = None
         self.__history_file = None
-        self.__echo_SQL = True
         self.__VARS = {}
         self.__interactive = True
         self.__in_multiline_command = False
@@ -470,7 +469,7 @@ class SQLCmd(Cmd):
 
     def run_file(self, file):
         self.__load_file(file)
-        self.cmdqueue += ["eof"]
+        self.cmdqueue += ["EOF"]
         self.__interactive = False
         self.__prompt = ""
         self.cmdloop()
@@ -552,9 +551,8 @@ class SQLCmd(Cmd):
 
         elif first.startswith(SQLCmd.META_COMMAND_PREFIX):
             # The ".set" command and other meta-commands.
-            s = ' '.join([first[len(SQLCmd.META_COMMAND_PREFIX):]] + tokens[1:])
             try:
-                self.__handle_metacommand(s)
+                self.__handle_metacommand(first, tokens[1:])
             except NonFatalError, ex:
                 error('%s' % str(ex))
                 if self.__flag_is_set('stacktrace'):
@@ -564,6 +562,7 @@ class SQLCmd(Cmd):
         elif s == "EOF":
             skip_history = True
             need_semi = False
+
         else:
             s = ' '.join([first] + tokens[1:])
 
@@ -698,6 +697,7 @@ class SQLCmd(Cmd):
             print "No match."
         else:
             print line
+
             # Temporarily turn off SQL echo. If this is a SQL command,
             # we just echoed it, and we don't want it to be echoed twice.
 
@@ -721,12 +721,14 @@ class SQLCmd(Cmd):
 
     def do_show(self, args):
         """
-        Run a SQL 'SELECT' statement.
+        Run the "show" command.
         """
         self.__ensure_connected()
         cursor = self.__db.cursor()
+
         try:
             if args.lower() == 'tables':
+                self.__echo('show', args)
                 tables = cursor.get_tables()
                 tables.sort()
                 for table in tables:
@@ -812,9 +814,9 @@ class SQLCmd(Cmd):
         as well (assuming the underlying DB driver supports retrieving
         index metadata).
         """
-        self.do_describe(args)
+        self.do_describe(args, cmd='desc')
 
-    def do_describe(self, args):
+    def do_describe(self, args, cmd='describe'):
         """
         Describe a table. Identical to the 'desc' command.
 
@@ -827,7 +829,7 @@ class SQLCmd(Cmd):
         self.__ensure_connected()
         cursor = self.__db.cursor()
         try:
-            self.__handle_describe(args, cursor)
+            self.__handle_describe(cmd, args, cursor)
         finally:
             cursor.close()
 
@@ -896,11 +898,13 @@ class SQLCmd(Cmd):
     def emptyline(self):
         pass
 
-    def __handle_metacommand(self, args):
-        tokens = args.split()
-        if tokens[0] == 'set':
-            self.__handle_set(tokens[1:])
-        pass
+    def __handle_metacommand(self, command, args):
+        self.__echo(command, ' '.join(args), add_semi=False)
+        command = command[len(SQLCmd.META_COMMAND_PREFIX):]
+        if command == 'set':
+            self.__handle_set(args)
+        else:
+            print 'Unknown sqlcmd meta-command: %s%s' % (command, args)
 
     def __show_vars(self):
         width = 0
@@ -940,7 +944,7 @@ class SQLCmd(Cmd):
     def __handle_update(self, command, args):
         try:
             cursor = self.__db.cursor()
-            self.__exec_SQL(cursor, '%s %s' % (command, args))
+            self.__exec_SQL(cursor, command, args)
             rows = cursor.rowcount
             if rows == None:
                 print "No row count available."
@@ -962,7 +966,7 @@ class SQLCmd(Cmd):
         fd, temp = tempfile.mkstemp(".dat", "sqlcmd")
         os.close(fd)
 
-        self.__exec_SQL(cursor, '%s %s' % (command, args))
+        self.__exec_SQL(cursor, command, args)
         rows = cursor.rowcount
         pl = ""
         if rows != 1:
@@ -1084,7 +1088,8 @@ class SQLCmd(Cmd):
         f.close()
         return (col_names, col_sizes)
 
-    def __handle_describe(self, args, cursor):
+    def __handle_describe(self, cmd, args, cursor):
+        self.__echo(cmd, args)
         a = args.split()
         if not len(a) in (1, 2):
             raise BadCommandError, 'Usage: describe table [full]'
@@ -1105,7 +1110,7 @@ class SQLCmd(Cmd):
 
         header = 'Table %s:' % table
         dashes = '-' * len(header)
-        print '\n%s' % dashes
+        print '%s' % dashes
         print '%s' % header
         print '%s\n' % dashes
 
@@ -1169,15 +1174,14 @@ class SQLCmd(Cmd):
                           '---------------------------------------'
         print ''
 
-    def __exec_SQL(self, cursor, s):
-        if self.__flag_is_set('echo'):
-            print s
+    def __exec_SQL(self, cursor, sql_command, args):
+        self.__echo(sql_command, args)
         start_elapsed = time.time()
-        cursor.execute(s)
+        cursor.execute(' '.join([sql_command, args]))
         end_elapsed = time.time()
         if self.__flag_is_set('timings'):
             total_elapsed = end_elapsed - start_elapsed
-            print '\nExecution time: %5.3f seconds'  % total_elapsed
+            print 'Execution time: %5.3f seconds'  % total_elapsed
 
     def __init_history(self):
         self.__history = history.get_history()
@@ -1191,6 +1195,15 @@ class SQLCmd(Cmd):
             except IOError:
                 pass
 
+    def __echo(self, *args, **kw):
+        if self.__flag_is_set('echo'):
+            semi = ''
+            if kw.get('add_semi', True):
+                semi = ';'
+
+            cmd = ' '.join([a for a in args]).strip()
+            print '\n%s%s\n' % (cmd, semi)
+        
     def __flag_is_set(self, varname):
         return self.__VARS[varname].value
 
@@ -1310,14 +1323,15 @@ class Main(object):
             cmd.cmdloop()
 
     def __parse_params(self, argv):
-        USAGE = 'Usage: %s [OPTIONS] [alias] [@file]'
+        USAGE = 'Usage: %prog [OPTIONS] [alias] [@file]'
         opt_parser = CommandLineParser(usage=USAGE)
         opt_parser.add_option('-c', '--config', action='store', dest='config',
                               default=RC_FILE,
                               help='Specifies the configuration file to use. '
                                    'Defaults to "%default".')
         opt_parser.add_option('-d', '--db', action='store', dest='database',
-                              help='database,dbtype,host[:port],user,password')
+                              help='Database to use. Format: '
+                                    'database,dbtype,host[:port],user,password')
         opt_parser.add_option('-l', '--loglevel', action='store',
                               dest='loglevel',
                               help='Enable log messages as level "n", where ' \
@@ -1329,8 +1343,9 @@ class Main(object):
         options, args = opt_parser.parse_args(argv)
 
         args = args[1:]
-        if not len(args) in [0, 1]:
-            opt_parser.showUsage('Incorrect number of parameters')
+        print args
+        if not len(args) in (1, 2):
+            opt_parser.show_usage('Incorrect number of parameters')
 
         if options.loglevel:
             if not (options.loglevel in LOG_LEVELS):
@@ -1346,13 +1361,14 @@ class Main(object):
 
         if len(args) == 0:
             pass # handled below
+
         elif len(args) == 1:
             if args[0].startswith('@'):
                 self.__input_file = args[0][1:]
             else:
                 self.__alias = args[0]
         else:
-            alias = args[0]
+            self.__alias = args[0]
             if not args[1].startswith('@'):
                 opt_parser.show_usage('File parameter must start with "@"')
             self.__input_file = args[1][1:]
