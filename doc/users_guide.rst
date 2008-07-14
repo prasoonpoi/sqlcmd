@@ -54,6 +54,43 @@ connection information for multiple databases, then specify a single database
 via a the least number of unique characters necessary to find it in the
 configuration file.
 
+Command Line
+------------
+
+**sqlcmd** [OPTIONS] [*alias*] [*@file*]
+
+Options
+~~~~~~~
+
+    -h, --help                    Show a usage message and exit.
+
+    -c config, --config=config    Specifies the configuration file to use.
+                                  Defaults to ``$HOME/.sqlcmd/config``. 
+                                  Ignored if ``-d`` is specified.
+
+    -d database, --db=database    Database to use. Format: 
+                                  ``dbname,dbtype,host[:port],user,password``
+                                  Overrides any specified *alias*.
+
+    -l level, --loglevel=level    Enable log messages as level *n*, where *n*
+                                  is one of: ``debug, info, warning, critical,
+                                  error``
+
+    -L logfile, --logfile=logfile Dump log messages to *logfile*, instead of
+                                  standard output
+
+
+
+Parameters
+~~~~~~~~~~
+
+- The *alias* parameter identifies an alias for the database in the
+  configuration file. It's ignored if the ``-d`` option is specified.
+  
+- The *@file* parameter specifies a file full of SQL commands to be run
+  once *sqlcmd* has connected to the database. If this parameter is omitted,
+  *sqlcmd* 
+
 Configuration File
 ------------------
 
@@ -77,3 +114,5 @@ Things will be a little clearer if we look at a sample configuration file.
     names=example-p, p-example, postgres
     database=/tmp/test.db
     type=sqlite
+
+This configuration file defines

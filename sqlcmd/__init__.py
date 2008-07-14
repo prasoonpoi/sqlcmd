@@ -552,12 +552,17 @@ class SQLCmd(Cmd):
         elif first.startswith(SQLCmd.META_COMMAND_PREFIX):
             # The ".set" command and other meta-commands.
             try:
-                self.__handle_metacommand(first, tokens[1:])
+                try:
+                    args = tokens[1]
+                except IndexError:
+                    args = ''
+                self.__handle_metacommand(first, args)
             except NonFatalError, ex:
                 error('%s' % str(ex))
                 if self.__flag_is_set('stacktrace'):
                     traceback.print_exc()
             need_semi = False
+            s = ""
 
         elif s == "EOF":
             skip_history = True
@@ -899,7 +904,7 @@ class SQLCmd(Cmd):
         pass
 
     def __handle_metacommand(self, command, args):
-        self.__echo(command, ' '.join(args), add_semi=False)
+        self.__echo(command, args, add_semi=False)
         command = command[len(SQLCmd.META_COMMAND_PREFIX):]
         if command == 'set':
             self.__handle_set(args)
@@ -918,6 +923,7 @@ class SQLCmd(Cmd):
             print '%-*s = %s' % (width, v.name, v.strValue())
 
     def __handle_set(self, set_args):
+        set_args = set_args.split()
         total_args = len(set_args)
         if total_args == 0:
             self.__show_vars()
