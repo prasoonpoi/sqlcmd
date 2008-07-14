@@ -43,3 +43,45 @@ Some features at a glance
 
 In short, *sqlcmd* is a SQL command tool that attempts to provide the same
 interface for all supported databases.
+
+Usage
+=====
+
+*sqlcmd* is invoked from the command line. You specify the database either
+via the ``-d`` (``--database``) command line option or, more conveniently,
+in a configuration file. The configuration file allows you to record the
+connection information for multiple databases, then specify a single database
+via a the least number of unique characters necessary to find it in the
+configuration file.
+
+Configuration File
+------------------
+
+Things will be a little clearer if we look at a sample configuration file.
+
+.. code-block:: ini
+
+    # ---------------------------------------------------------------------------
+    # sqlcmd initialization file
+
+    [db.example_postgres]
+    names=example-p, p-example, postgres
+    database=example
+    host=localhost
+    #port=
+    type=postgresql
+    user=admin
+    password=admin
+
+    [db.example_sqlite3]
+    names=example-p, p-example, postgres
+    database=/tmp/test.db
+    type=sqlite
+    
+.. code-block:: python
+
+    import os
+    
+    print os.getcwd("foo")
+    if x == y:
+        return

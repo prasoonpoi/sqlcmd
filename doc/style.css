@@ -28,5 +28,51 @@ p.topic-title
 
 div.topic
 {
-  margin: 0em;
+    margin: 0em;
+}
+
+/* The following are all for Pygments */
+
+div.code-block
+{
+    margin-left: 2em;
+    margin-right: 2em;
+    background-color: #eeeeee;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 10pt;
+}
+
+div.highlight pre span.c
+{
+    color: gray;
+}
+
+div.highlight pre span.k
+{
+    color: blue;
+}
+
+div.highlight pre span.n
+{
+    color: black;
+}
+
+div.highlight pre span.na
+{
+    color: red;
+}
+
+div.highlight pre span.o
+{
+    color: black;
+}
+
+div.highlight pre span.p
+{
+    color: black;
+}
+
+div.highlight pre span.s
+{
+    color: green;
 }
