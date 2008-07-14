@@ -90,7 +90,6 @@ __all__ = ['SQLCmd', 'main']
 # Constants
 # ---------------------------------------------------------------------------
 
-RC_FILE = os.path.expanduser("~/.sqlcmd")
 INTRO = '''SQLCmd, version %s ($Revision$)
 Copyright 2008 Brian M. Clapper.
 
@@ -105,6 +104,12 @@ BOOL_STRS = { "on"    : True,
               "0"     : False,
               "true"  : True,
               "false" : False }
+
+DEFAULT_CONFIG_DIR = os.path.join(os.environ.get('HOME', os.getcwd()), 
+                                  '.sqlcmd')
+
+RC_FILE = os.path.join(DEFAULT_CONFIG_DIR, 'config')
+HISTORY_FILE_FORMAT = os.path.join(DEFAULT_CONFIG_DIR, '%s.hist')
 
 # ---------------------------------------------------------------------------
 # Globals
@@ -162,7 +167,16 @@ class DBInstanceConfigItem(object):
     Captures information about a database configuration item read from the
     .sqlcmd file in the user's home directory.
     """
-    def __init__(self, aliases, host, database, user, password, type, port):
+    def __init__(self, 
+                 section, 
+                 aliases, 
+                 host, 
+                 database, 
+                 user, 
+                 password, 
+                 type, 
+                 port):
+        self.section = section
         self.aliases = aliases
         self.primary_alias = aliases[0]
         self.host = host
@@ -175,7 +189,8 @@ class DBInstanceConfigItem(object):
     @property
     def db_key(self):
         port = self.port if self.port else ''
-        return '%s|%s|%s' % (self.host, self.port, self.database)
+        return '%s|%s|%s|%s' %\
+               (self.host, self.db_type, self.port, self.database)
 
     def __hash__(self):
         return self.primary_alias.__hash__()
@@ -210,22 +225,26 @@ class SQLCmdConfig(object):
                 self.__config_driver(cfg, section)
                 
     def __config_db(self, cfg, section):
-        aliases = cfg.get(section, 'names')
-        aliases = aliases.split(',')
+        primary_name = section[3:] # assumes it starts with 'db.'
+        if len(primary_name) == 0:
+            raise ConfigurationError, 'Bad database section name "%s"' % section
+
+        aliases = cfg.getlist(section, 'names', sep=',')
         if not aliases:
             raise ConfigurationError, 'No names for database [%s]' % section
 
-        aliases = [a.strip() for a in aliases]
+        aliases = [primary_name] + [a.strip() for a in aliases]
 
-        host = cfg.get(section, 'host')
+        host = cfg.get(section, 'host', optional=True)
         port = cfg.get(section, 'port', optional=True)
         db_name = cfg.get(section, 'database')
-        user = cfg.get(section, 'user')
-        password = cfg.get(section, 'password')
+        user = cfg.get(section, 'user', optional=True)
+        password = cfg.get(section, 'password', optional=True)
         db_type = cfg.get(section, 'type')
 
         try:
-            cfg_item = DBInstanceConfigItem(aliases,
+            cfg_item = DBInstanceConfigItem(section,
+                                            aliases,
                                             host,
                                             db_name,
                                             user,
@@ -245,7 +264,7 @@ class SQLCmdConfig(object):
         name = cfg.get(section, 'name')
         db.add_driver(name, cls)
 
-    def add(self, alias, host, port, database, type, user, password):
+    def add(self, section, alias, host, port, database, type, user, password):
         try:
             self.__config[alias]
             raise ConfigurationError, \
@@ -255,7 +274,8 @@ class SQLCmdConfig(object):
             pass
 
             try:
-                cfg = DBInstanceConfigItem([alias],
+                cfg = DBInstanceConfigItem(section, 
+                                           [alias],
                                            host,
                                            database,
                                            user,
@@ -288,8 +308,9 @@ class SQLCmdConfig(object):
                       'No configuration item for database "%s"' % alias
             if total_matches > 1:
                 raise ConfigurationError, \
-                      '%d databases match partial alias "%s"' %\
-                      (total_matches, alias)
+                      '%d databases match partial alias "%s": %s' %\
+                      (total_matches, alias, \
+                       ', '.join([cfg.section for cfg in matches.values()]))
             config_item = matches.values()[0]
 
         return config_item
@@ -1213,7 +1234,7 @@ class SQLCmd(Cmd):
                                    password=db_config.password,
                                    database=db_config.database)
 
-        history_file = '~/.sqlcmd_%s' % db_config.primary_alias
+        history_file = HISTORY_FILE_FORMAT % db_config.primary_alias
         self.__history_file = os.path.expanduser(history_file)
         self.__init_history()
 
@@ -1237,13 +1258,13 @@ class Main(object):
 
         # Initialize logging
 
-        self.__init_logging(self.__logLevel, self.__logFile)
+        self.__init_logging(self.__log_level, self.__log_file)
 
         # Load the configuration
 
         cfg = SQLCmdConfig()
         try:
-            cfg.load_file(RC_FILE)
+            cfg.load_file(self.__config_file)
         except IOError, ex:
             warning(str(ex))
         except ConfigurationError, ex:
@@ -1253,14 +1274,15 @@ class Main(object):
 
         try:
             save_history = True
-            if self.__dbConnectInfo:
-                (db, dbType, hp, user, pw) = self.__dbConnectInfo
+            if self.__db_connect_info:
+                (db, dbType, hp, user, pw) = self.__db_connect_info
                 host = hp
                 port = None
                 if ':' in hp:
                     (host, port) = hp.split(':', 2)
 
-                cfg.add("__cmdline__", # alias
+                cfg.add("__cmdline__", # dummy section name
+                        "__cmdline__", # alias
                         host,
                         port,
                         db,
@@ -1278,70 +1300,75 @@ class Main(object):
         except ConfigurationError, ex:
             die(str(ex))
 
-        if self.__inputFile:
+        if self.__input_file:
             try:
-                cmd.run_file(self.__inputFile)
+                cmd.run_file(self.__input_file)
             except IOError, (ex, errormsg):
                 die('Failed to load file "%s": %s' %\
-                    (self.__inputFile, errormsg))
+                    (self.__input_file, errormsg))
         else:
             cmd.cmdloop()
 
     def __parse_params(self, argv):
         USAGE = 'Usage: %s [OPTIONS] [alias] [@file]'
-        optParser = CommandLineParser(usage=USAGE)
-        optParser.add_option('-d', '--db', action='store', dest='database',
-                             help='database,dbtype,host[:port],user,password')
-        optParser.add_option('-l', '--loglevel', action='store',
-                             dest='loglevel',
-                             help='Enable log messages as level "n", where ' \
-                                  '"n" is one of: %s' % ', '.join(LOG_LEVELS),
-                             default='info')
-        optParser.add_option('-L', '--logfile', action='store', dest='logfile',
-                             help='Dump log messages to LOGFILE, instead of ' \
-                                  'standard output')
-        options, args = optParser.parse_args(argv)
+        opt_parser = CommandLineParser(usage=USAGE)
+        opt_parser.add_option('-c', '--config', action='store', dest='config',
+                              default=RC_FILE,
+                              help='Specifies the configuration file to use. '
+                                   'Defaults to "%default".')
+        opt_parser.add_option('-d', '--db', action='store', dest='database',
+                              help='database,dbtype,host[:port],user,password')
+        opt_parser.add_option('-l', '--loglevel', action='store',
+                              dest='loglevel',
+                              help='Enable log messages as level "n", where ' \
+                                   '"n" is one of: %s' % ', '.join(LOG_LEVELS),
+                              default='info')
+        opt_parser.add_option('-L', '--logfile', action='store', dest='logfile',
+                              help='Dump log messages to LOGFILE, instead of ' \
+                                   'standard output')
+        options, args = opt_parser.parse_args(argv)
 
         args = args[1:]
         if not len(args) in [0, 1]:
-            optParser.showUsage('Incorrect number of parameters')
+            opt_parser.showUsage('Incorrect number of parameters')
 
         if options.loglevel:
             if not (options.loglevel in LOG_LEVELS):
-                optParser.showUsage('Bad value "%s" for log level.' %\
+                opt_parser.showUsage('Bad value "%s" for log level.' %\
                                     options.loglevel)
 
-        self.__inputFile = None
+        self.__input_file = None
         self.__alias = None
-        self.__dbConnectInfo = None
-        self.__logLevel = options.loglevel
-        self.__logFile = options.logfile
+        self.__db_connect_info = None
+        self.__log_level = options.loglevel
+        self.__log_file = options.logfile
+        self.__config_file = options.config
 
         if len(args) == 0:
             pass # handled below
         elif len(args) == 1:
             if args[0].startswith('@'):
-                self.__inputFile = args[0][1:]
+                self.__input_file = args[0][1:]
             else:
                 self.__alias = args[0]
         else:
             alias = args[0]
             if not args[1].startswith('@'):
-                optParser.show_usage('File parameter must start with "@"')
-            self.__inputFile = args[1][1:]
+                opt_parser.show_usage('File parameter must start with "@"')
+            self.__input_file = args[1][1:]
 
         if options.database:
-            self.__dbConnectInfo = options.database.split(',')
-            if len(self.__dbConnectInfo) != 5:
-                optParser.show_usage('Bad argument "%s" to -d option' %\
+            self.__db_connect_info = options.database.split(',')
+            if len(self.__db_connect_info) != 5:
+                opt_parser.show_usage('Bad argument "%s" to -d option' %\
                                      options.database)
 
-        if not (self.__dbConnectInfo or self.__alias):
-            optParser.show_usage('You must specify either an alias or a '
+        if not (self.__db_connect_info or self.__alias):
+            opt_parser.show_usage('You must specify either an alias or a '
                                  'valid argument to "-d"')
 
-        if self.__dbConnectInfo and self.__alias:
-            optParser.show_usage('You cannot specify both an alias and "-d"')
+        if self.__db_connect_info and self.__alias:
+            opt_parser.show_usage('You cannot specify both an alias and "-d"')
 
     def __init_logging(self, level, file):
         """Initialize logging subsystem"""

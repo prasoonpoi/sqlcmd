@@ -77,11 +77,3 @@ Things will be a little clearer if we look at a sample configuration file.
     names=example-p, p-example, postgres
     database=/tmp/test.db
     type=sqlite
-    
-.. code-block:: python
-
-    import os
-    
-    print os.getcwd("foo")
-    if x == y:
-        return
