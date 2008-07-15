@@ -67,16 +67,14 @@ Options
     -c config, --config=config    Specifies the configuration file to use.
                                   Defaults to ``$HOME/.sqlcmd/config``.
                                   Ignored if ``-d`` is specified.
+                                  See `Configuration File`_, below, for
+                                  more information on the format of this file.
 
     -d database, --db=database    Database to use. Format:
                                   ``dbname,dbtype,host[:port],user,password``
-                                  Overrides any specified *alias*. Legal
-                                  database types are defined by the
-                                  `Grizzled Utility Library`_'s `db`_ package, 
-                                  and currently include: ``oracle``,
-                                  ``sqlserver``, ``mysql``, ``postgresql`` and
-                                  ``sqlite``. Additional database types can be
-                                  added, however; see below.
+                                  Overrides any specified *alias*. See
+                                  `Specifying a Database`_, below, for a
+                                  complete explanation of this parameter.
 
     -l level, --loglevel=level    Enable log messages as level *n*, where *n*
                                   is one of: ``debug, info, warning, critical,
@@ -98,29 +96,128 @@ Parameters
   run once *sqlcmd* has connected to the database. If this parameter is omitted,
   *sqlcmd* will enter command line mode, prompting on standard input for each
   command.
+  
+Specifying a Database
+~~~~~~~~~~~~~~~~~~~~~
+
+The ``--db`` (or ``-d``) parameter is somewhat complicated. It takes five
+comma-separated parameters, in order:
+
+``dbname``:
+    The name of the database. (For SQLite, this is the path to the file.)
+    
+``dbtype``:
+    The database type, as defined by the `Grizzled Utility Library`_'s `db`_
+    package, ``oracle``,``sqlserver``, ``mysql``, ``postgresql`` and
+    ``sqlite``. Additional database types can be added, however; see 
+    below_.
+    
+.. _below: `Configuration File`_
+
+``host:port``:
+    The host name and port number on which the database server is listening for 
+    connections. This field is ignored, and may be empty, for SQLite. The port
+    number may be omitted (i.e., with only the host name specified), and the
+    database driver will use the default port for the database type.
+    
+``user``:
+    The user to use when authenticating to the database. Ignored for SQLite.
+    
+``password``:
+    The password to use when authenticating to the database. Ignored for SQLite.
+
+Examples:
++++++++++
+
+Connect to a SQLite database residing in file ``/tmp/test.db``::
+
+    sqlcmd -d /tmp/test.db,sqlite,,,
+    
+Connect to an Oracle database named "customers" on host ``db.example.com``,
+using user "scott" and password "tiger"::
+
+    sqlcmd -d customers,oracle,db.example.com,scott,tiger
+    
+Connect to a PostgreSQL database named "mydb" on the current host, using user
+"psql" and password "foo.bar"::
+
+    sqlcmd -d mydb,postgresql,localhost,psql,foo.bar
+
 
 Configuration File
-------------------
+==================
+
+Specify the database connection parameters on the command line is both tedious
+and error prone, even with a good shell history mechanism. So, *sqlcmd*
+permits you to store your database connection information in a configuration
+file.
+
+A Brief Overview of the Configuration File
+------------------------------------------
 
 Things will be a little clearer if we look at a sample configuration file.
+The following file specifies the same databases as in the examples, above:
 
 .. code-block:: ini
 
-    # ---------------------------------------------------------------------------
     # sqlcmd initialization file
 
-    [db.example_postgres]
-    names=example-p, p-example, postgres
-    database=example
-    host=localhost
-    #port=
-    type=postgresql
-    user=admin
-    password=admin
-
-    [db.example_sqlite3]
-    names=example-p, p-example, postgres
+    [db.testdb]
+    names=sqlite, test
     database=/tmp/test.db
     type=sqlite
 
-This configuration file defines
+    [db.customers]
+    names=oracle
+    database=customers
+    type=oracle
+    host=db.example.com
+    user=scott
+    password=tiger
+
+    [db.mydb]
+    names=postgres
+    database=mydb
+    type=postgresql
+    host=localhost
+    user=psql
+    password=foo.bar
+
+Now, if you store that file in ``$HOME/.sqlcmd/config`` (the default place 
+*sqlcmd* searches for it), connecting to each of the databases is much simpler::
+
+    sqlcmd testdb
+    sqlcmd customers
+    sqlcmd mydb
+    
+You can store the file somewhere else, of course; you just have to tell
+*sqlcmd* where it is::
+
+    sqlcmd -c /usr/local/etc/sqlcmd.cfg testdb
+    sqlcmd -c /usr/local/etc/sqlcmd.cfg customers
+    sqlcmd -c /usr/local/etc/sqlcmd.cfg mydb
+
+See the next section for details on the specific sections and options in the
+*sqlcmd* configuration file.
+
+Configuration File in Depth
+---------------------------
+
+The ``db.`` Sections
+~~~~~~~~~~~~~~~~~~~~
+
+The ``driver.`` Sections
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Other Sections
+~~~~~~~~~~~~~~
+
+
+The *sqlcmd* Command Line Interface
+-----------------------------------
+
+SQL
+===
+
+*sqlcmd*-specific Commands
+==========================

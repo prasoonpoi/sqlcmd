@@ -229,11 +229,9 @@ class SQLCmdConfig(object):
         if len(primary_name) == 0:
             raise ConfigurationError, 'Bad database section name "%s"' % section
 
-        aliases = cfg.getlist(section, 'names', sep=',')
-        if not aliases:
-            raise ConfigurationError, 'No names for database [%s]' % section
-
-        aliases = [primary_name] + [a.strip() for a in aliases]
+        aliases = cfg.getlist(section, 'aliases', sep=',', optional=True)
+        if aliases:
+            aliases = [primary_name] + [a.strip() for a in aliases]
 
         host = cfg.get(section, 'host', optional=True)
         port = cfg.get(section, 'port', optional=True)
@@ -1350,7 +1348,7 @@ class Main(object):
 
         args = args[1:]
         print args
-        if not len(args) in (1, 2):
+        if not len(args) in (0, 1, 2):
             opt_parser.show_usage('Incorrect number of parameters')
 
         if options.loglevel:
