@@ -65,12 +65,18 @@ Options
     -h, --help                    Show a usage message and exit.
 
     -c config, --config=config    Specifies the configuration file to use.
-                                  Defaults to ``$HOME/.sqlcmd/config``. 
+                                  Defaults to ``$HOME/.sqlcmd/config``.
                                   Ignored if ``-d`` is specified.
 
-    -d database, --db=database    Database to use. Format: 
+    -d database, --db=database    Database to use. Format:
                                   ``dbname,dbtype,host[:port],user,password``
-                                  Overrides any specified *alias*.
+                                  Overrides any specified *alias*. Legal
+                                  database types are defined by the
+                                  `Grizzled Utility Library`_'s `db`_ package, 
+                                  and currently include: ``oracle``,
+                                  ``sqlserver``, ``mysql``, ``postgresql`` and
+                                  ``sqlite``. Additional database types can be
+                                  added, however; see below.
 
     -l level, --loglevel=level    Enable log messages as level *n*, where *n*
                                   is one of: ``debug, info, warning, critical,
@@ -79,17 +85,19 @@ Options
     -L logfile, --logfile=logfile Dump log messages to *logfile*, instead of
                                   standard output
 
-
+.. _Grizzled Utility Library: http://www.clapper.org/software/python/grizzled/
+.. _db: http://www.clapper.org/software/python/grizzled/epydoc/grizzled.db-module.html
 
 Parameters
 ~~~~~~~~~~
 
 - The *alias* parameter identifies an alias for the database in the
   configuration file. It's ignored if the ``-d`` option is specified.
-  
-- The *@file* parameter specifies a file full of SQL commands to be run
-  once *sqlcmd* has connected to the database. If this parameter is omitted,
-  *sqlcmd* 
+
+- The *@file* parameter specifies a file of SQL (and *sqlcmd*) commands to be
+  run once *sqlcmd* has connected to the database. If this parameter is omitted,
+  *sqlcmd* will enter command line mode, prompting on standard input for each
+  command.
 
 Configuration File
 ------------------
