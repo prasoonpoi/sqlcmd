@@ -240,6 +240,8 @@ class SQLCmdConfig(object):
         password = cfg.get(section, 'password', optional=True)
         db_type = cfg.get(section, 'type')
 
+        aliases += [db_name]
+
         try:
             cfg_item = DBInstanceConfigItem(section,
                                             aliases,
@@ -409,11 +411,6 @@ class SQLCmd(Cmd):
                              for x in range(256)])
 
     NO_SEMI_NEEDED = set()
-    NO_SEMI_NEEDED.add('load')
-    NO_SEMI_NEEDED.add('connect')
-    NO_SEMI_NEEDED.add('h')
-    NO_SEMI_NEEDED.add('history')
-    NO_SEMI_NEEDED.add('hist')
     NO_SEMI_NEEDED.add('help')
     NO_SEMI_NEEDED.add('?')
     NO_SEMI_NEEDED.add('r')
@@ -447,7 +444,7 @@ class SQLCmd(Cmd):
                     db.commit()
 
         vars = [
-            Variable('echo',       SQLCmd.VAR_TYPES.boolean, True,
+            Variable('echo',       SQLCmd.VAR_TYPES.boolean, False,
                      'Whether or not SQL statements are echoed.'),
             Variable('timings',    SQLCmd.VAR_TYPES.boolean, True,
                      'Whether or not to show how SQL statements take.'),
@@ -540,6 +537,16 @@ class SQLCmd(Cmd):
 
         self.__scrub_history()
 
+        if first.startswith('@'):
+            first = SQLCmd.META_COMMAND_PREFIX + 'load'
+            if len(first) > 1:
+                args = [first[1:]] + args
+
+        elif first.startswith('!'):
+            first = 'r'
+            if len(first) > 1:
+                args = [first[1:]] + args
+
         need_semi = not first in SQLCmd.NO_SEMI_NEEDED;
         if first.startswith(SQLCmd.COMMENT_PREFIX):
             # Comments are handled specially. Rather than transform them
@@ -556,14 +563,6 @@ class SQLCmd(Cmd):
 
         elif s == "EOF":
             skip_history = True
-            need_semi = False
-
-        elif first.startswith('@'):
-            if len(first) > 1:
-                first = 'load ' + first[1:]
-            else:
-                first = 'load'
-            s = ' '.join([first] + args)
             need_semi = False
 
         else:
@@ -599,79 +598,12 @@ class SQLCmd(Cmd):
 
         return s
 
-    def do_load(self, args):
-        """
-        Load and run a file full of commands without exiting the command
-        shell.
-
-        Usage: load file
-               @ file
-               @file
-        """
-        tokens = args.split(None, 1)
-        if len(tokens) > 1:
-            raise BadCommandError, 'Too many arguments to "load" ("@")'
-
-        try:
-            self.__load_file(tokens[0])
-        except IOError, (ex, msg):
-            error('Unable to load file "%s": %s' % (tokens[0], msg))
-
-    def do_connect(self, args):
-        """
-        Close the current database connection, and connect to another
-        database.
-
-        Usage: connect database_alias
-
-        where 'database_alias' is a valid database alias from the .sqlcmd
-        startup file.
-        """
-        tokens = args.split(None, 1)
-        if len(tokens) > 1:
-            raise BadCommandError, 'Too many arguments to "connect"'
-
-        if self.__db != None:
-            try:
-                self.__db.close()
-            except db.Error:
-                pass
-            self.set_database(tokens[0])
-            assert(self.__db_config != None)
-            self.__connect_to(self.__db_config)
-
-    def do_h(self, args):
-        """
-        Show the current command history. Identical to the 'hist' and
-        'history' commands.
-
-        Usage: h
-        """
-        self.__show_history()
-
-    def do_hist(self, args):
-        """
-        Show the current command history. Identical to the 'h' command and
-        'history' commands.
-
-        Usage: hist
-        """
-        self.__show_history()
-
-    def do_history(self, args):
-        """
-        Show the current command history. Identical to the 'h' command and
-        'hist' commands.
-
-        Usage: history
-        """
-        self.__show_history()
-
     def do_r(self, args):
         """
         Re-run a command.
 
         Usage: r [num]
+               ![num]
 
         where 'num' is the number of the command to re-run, as shown in the
         'history' display. If 'num' is omitted, re-run the most previously
@@ -832,6 +764,33 @@ class SQLCmd(Cmd):
         except ValueError:
                 raise BadCommandError, 'Bad argument to "set %s"' % varname
         
+    def do_dot_h(self, args):
+        """
+        Show the current command history. Identical to the 'hist' and
+        'history' commands.
+
+        Usage: .h
+        """
+        self.__show_history()
+
+    def do_dot_hist(self, args):
+        """
+        Show the current command history. Identical to the 'h' command and
+        'history' commands.
+
+        Usage: .hist
+        """
+        self.__show_history()
+
+    def do_dot_history(self, args):
+        """
+        Show the current command history. Identical to the 'h' command and
+        'hist' commands.
+
+        Usage: .history
+        """
+        self.__show_history()
+
     def do_dot_show(self, args):
         """
         Run the "show" command.
@@ -885,6 +844,50 @@ class SQLCmd(Cmd):
             self.__handle_describe(cmd, args, cursor)
         finally:
             cursor.close()
+
+    def do_dot_load(self, args):
+        """
+        Load and run a file full of commands without exiting the command
+        shell.
+
+        Usage: .load file
+               @ file
+               @file
+        """
+        tokens = args.split(None, 1)
+        if len(tokens) > 1:
+            raise BadCommandError, 'Too many arguments to "load" ("@")'
+
+        try:
+            self.__load_file(tokens[0])
+        except IOError, (ex, msg):
+            error('Unable to load file "%s": %s' % (tokens[0], msg))
+
+    def do_dot_connect(self, args):
+        """
+        Close the current database connection, and connect to another
+        database.
+
+        Usage: connect database_alias
+
+        where 'database_alias' is a valid database alias from the .sqlcmd
+        startup file.
+        """
+        tokens = args.split(None, 1)
+        if len(tokens) > 1:
+            raise BadCommandError, 'Too many arguments to "connect"'
+
+        if len(tokens) == 0:
+            raise BadCommandError, 'Usage: .connect databasename'
+
+        if self.__db != None:
+            try:
+                self.__db.close()
+            except db.Error:
+                pass
+            self.set_database(tokens[0])
+            assert(self.__db_config != None)
+            self.__connect_to(self.__db_config)
 
     def help_variables(self):
         print """

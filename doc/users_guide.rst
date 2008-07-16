@@ -27,22 +27,31 @@ Introduction
 Some features at a glance
 --------------------------
 
-- Connection parameters for individual databases are kept in a ``.sqlcmd``
+- Connection parameters for individual databases are kept in a configuration
   file in your home directory.
 - Databases can be assigned multiple logical names.
-- GNU Readline support, with history management. History files are saved
-  per database.
-- Ability to get a list of tables, examine a table's columns, and get a list of
-  the indexes and foreign keys for a table.
-- A ``.set`` command that displays and controls *sqlcmd* settings.
-- Uses the enhanced database drivers in the `Grizzled API`_'s ``db``
+- *sqlcmd* has command history management, with `GNU Readline`_ support.
+  History files are saved per database.
+- *sqlcmd* supports SQL, but also supports database metadata (getting a list
+  of tables, querying the table's columns and their data types, listing the
+  indexes and foreign keys for a table, etc.).
+- *sqlcmd* command has a ``.set`` command that displays and controls *sqlcmd* 
+  settings.
+- *sqlcmd* provides a standard interface that works the same no matter what 
+  database you're using.
+- *sqlcmd* uses the enhanced database drivers in the `Grizzled API`_'s ``db``
   module. (Those drivers are, in turn, built on top of standard Python
   DB API drivers like ``psycopg2`` and ``MySQLdb``.)
+- *sqlcmd* is written entirely in `Python`_, which makes it very portable
+  though the database drivers are often written in C and may not be available
+  on all platforms).
 
-  .. _Grizzled API: http://www.clapper.org/software/python/grizzled/
+.. _Grizzled API: http://www.clapper.org/software/python/grizzled/
+.. _GNU Readline: http://cnswww.cns.cwru.edu/php/chet/readline/rluserman.html
+.. _Python: http://www.python.org/
 
 In short, *sqlcmd* is a SQL command tool that attempts to provide the same
-interface for all supported databases.
+interface for all supported databases and across all platforms.
 
 Usage
 =====
@@ -96,7 +105,7 @@ Parameters
   run once *sqlcmd* has connected to the database. If this parameter is omitted,
   *sqlcmd* will enter command line mode, prompting on standard input for each
   command.
-  
+
 Specifying a Database
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -105,24 +114,24 @@ comma-separated parameters, in order:
 
 ``dbname``:
     The name of the database. (For SQLite, this is the path to the file.)
-    
+
 ``dbtype``:
     The database type, as defined by the `Grizzled Utility Library`_'s `db`_
     package, ``oracle``,``sqlserver``, ``mysql``, ``postgresql`` and
-    ``sqlite``. Additional database types can be added, however; see 
+    ``sqlite``. Additional database types can be added, however; see
     below_.
-    
+
 .. _below: `Configuration File`_
 
 ``host:port``:
-    The host name and port number on which the database server is listening for 
+    The host name and port number on which the database server is listening for
     connections. This field is ignored, and may be empty, for SQLite. The port
     number may be omitted (i.e., with only the host name specified), and the
     database driver will use the default port for the database type.
-    
+
 ``user``:
     The user to use when authenticating to the database. Ignored for SQLite.
-    
+
 ``password``:
     The password to use when authenticating to the database. Ignored for SQLite.
 
@@ -132,12 +141,12 @@ Examples:
 Connect to a SQLite database residing in file ``/tmp/test.db``::
 
     sqlcmd -d /tmp/test.db,sqlite,,,
-    
+
 Connect to an Oracle database named "customers" on host ``db.example.com``,
 using user "scott" and password "tiger"::
 
     sqlcmd -d customers,oracle,db.example.com,scott,tiger
-    
+
 Connect to a PostgreSQL database named "mydb" on the current host, using user
 "psql" and password "foo.bar"::
 
@@ -183,19 +192,23 @@ The following file specifies the same databases as in the examples, above:
     user=psql
     password=foo.bar
 
-Now, if you store that file in ``$HOME/.sqlcmd/config`` (the default place 
-*sqlcmd* searches for it), connecting to each of the databases is much simpler::
+Now, if you store that file in ``$HOME/.sqlcmd/config`` (the default place
+*sqlcmd* searches for it), connecting to each of the databases is much simpler:
 
-    sqlcmd testdb
-    sqlcmd customers
-    sqlcmd mydb
-    
+.. code-block:: bash
+
+    $ sqlcmd testdb
+    $ sqlcmd customers
+    $ sqlcmd mydb
+
 You can store the file somewhere else, of course; you just have to tell
-*sqlcmd* where it is::
+*sqlcmd* where it is:
 
-    sqlcmd -c /usr/local/etc/sqlcmd.cfg testdb
-    sqlcmd -c /usr/local/etc/sqlcmd.cfg customers
-    sqlcmd -c /usr/local/etc/sqlcmd.cfg mydb
+.. code-block:: bash
+
+    $ sqlcmd -c /usr/local/etc/sqlcmd.cfg testdb
+    $ sqlcmd -c /usr/local/etc/sqlcmd.cfg customers
+    $ sqlcmd -c /usr/local/etc/sqlcmd.cfg mydb
 
 See the next section for details on the specific sections and options in the
 *sqlcmd* configuration file.
@@ -203,14 +216,222 @@ See the next section for details on the specific sections and options in the
 Configuration File in Depth
 ---------------------------
 
+A *sqlcmd* configuration file, typically stored in ``$HOME/.sqlcmd/config``,
+is an INI-style file divided into logical sections. Each of those sections
+is described below. All section names must be unique within the file.
+
+Blank lines and comment lines are ignored; comment lines start with a "#"
+character.
+
+*sqlcmd* uses the `Grizzled API`_'s `grizzled.config.Configuration`_
+class to parse the file; that class is, in turn, an enhancement of the standard
+Python `ConfigParser`_ class.
+
+.. _grizzled.config.Configuration: http://www.clapper.org/software/python/grizzled/epydoc/grizzled.config.Configuration-class.html
+.. _ConfigParser: http://docs.python.org/lib/module-ConfigParser.html
+
+Because *sqlcmd* uses the Grizzled API's ``Configuration`` class, you can use
+include directives and variable substitution in the configuration file, if
+you with. See the `grizzled.config.Configuration`_ documentation for more
+details.
+
 The ``db.`` Sections
 ~~~~~~~~~~~~~~~~~~~~
 
+A ``db.`` section contains the connection definition for a particular database.
+The ``db.`` prefix must be followed by the primary name of the database.
+Multiple ``db.`` sections can exist in the configuration file; each section
+supports the following parameters.
+
+    +------------------+---------------------------------+---------------------+
+    | *Parameter Name* | *Description*                   | *Required/Optional* |
+    +==================+=================================+=====================+
+    + ``database``     | The name of the database, as    | required            |
+    |                  | known by the RDBMS engine.      |                     |
+    +------------------+---------------------------------+---------------------+
+    | ``type``         | The type of the database. This  | required            |
+    |                  | value must be recognized by the |                     |
+    |                  | Grizzled API's ``db`` module.   |                     |
+    |                  | That means it must identify a   |                     |
+    |                  | database driver that is part of |                     |
+    |                  | the ``grizzled.db`` package, or |                     |
+    |                  | it must be a driver you specify |                     |
+    |                  | yourself, in a ``driver.``      |                     |
+    |                  | section. (See `below`_.)        |                     |
+    +------------------+---------------------------------+---------------------+
+    | ``host``         | The host on which the database  | required (but       |
+    |                  | resides. The RDBMS server on    | ignored for SQLite) |
+    |                  | that host must be configured to |                     |
+    |                  | accept incoming database client |                     |
+    |                  | connections.                    |                     |
+    |                  |                                 |                     |
+    |                  | This parameter is ignored for   |                     |
+    |                  | SQLite databases.               |                     |
+    +------------------+---------------------------------+---------------------+
+    | ``port``         | The port on which the database  | optional (but       |
+    |                  | server is listening. If not     | ignored for SQLite) |
+    |                  | specified, *sqlcmd* uses the    |                     |
+    |                  | default port for the RDBMS      |                     |
+    |                  | server (e.g, 1521 for Oracle,   |                     |
+    |                  | 1433 for SQL Server, 3306 for   |                     |
+    |                  | MYSQL, 5432 for PostgreSQL,     |                     |
+    |                  | etc.).                          |                     |
+    |                  |                                 |                     |
+    |                  | This parameter is ignored for   |                     |
+    |                  | SQLite databases.               |                     |
+    +------------------+---------------------------------+---------------------+
+    | ``user``         | The user to use when            | required (but       |
+    |                  | authenticating to the database. | ignored for SQLite) |
+    |                  |                                 |                     |
+    |                  | This parameter is ignored for   |                     |
+    |                  | SQLite databases.               |                     |
+    +------------------+---------------------------------+---------------------+
+    | ``password``     | The password to use when        | required (but       |
+    |                  | authenticating to the database. | ignored for SQLite) |
+    |                  |                                 |                     |
+    |                  | This parameter is ignored for   |                     |
+    |                  | SQLite databases.               |                     |
+    +------------------+---------------------------------+---------------------+
+    | ``aliases``      | A comma-separated list of alias | optional            |
+    |                  | names for the database. This    |                     |
+    |                  | list allows you to refer to the |                     |
+    |                  | database by multiple names      |                     |
+    +------------------+---------------------------------+---------------------+
+
+A Note about Database Names
++++++++++++++++++++++++++++
+
+When you specify the name of a database on the *sqlcmd* command line,
+*sqlcmd* attempts to match that name against the names of all databases in
+the configuration file. *sqlcmd* compares the name you specify against the
+following values from each ``db.`` configuration section:
+
+- The section name, minus the ``db.`` prefix. This is the primary name of
+  the database, from *sqlcmd*'s perspective.
+- The value of the ``database`` option.
+- The value or values of the ``aliases`` option.
+
+You only need to specify as many characters as are
+necessary to uniquely identify the database.
+
+Thus, given this configuration file:
+
+.. code-block:: ini
+
+
+    [db.testdb]
+    names=sqlite, test
+    database=/tmp/test.db
+    type=sqlite
+
+    [db.customers]
+    names=oracle, custdb
+    database=cust001
+    type=oracle
+    host=db.example.com
+    user=scott
+    password=tiger
+
+
+You can connect to the ``customers`` database using any of the following
+names:
+
+- ``customers``: the section name, minus ``db.``.
+- ``custdb``: one of the aliases
+- ``oracle``: the other alias
+- ``cust001``: the actual database name, from the ``database`` option
+- ``cust``: a unique abbreviation of ``customers`` or ``cust001``
+
+    
 The ``driver.`` Sections
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+The ``driver.`` section allows you to install additional enhanced database
+drivers, beyond those that are built into the `Grizzled API`_'s ``db``
+package.
+
+An enhanced driver must extend the ``grizzled.db.DBDriver`` class and provide
+the appropriate methods. See the `appropriate Grizzled documentation`_ for
+details. If you want to write your own driver, the Grizzled source code is
+invaluable.
+
+.. _appropriate Grizzled documentation: http://www.clapper.org/software/python/grizzled/epydoc/grizzled.db-module.html
+
+The ``driver.`` section supports the following options:
+
+    +------------------+---------------------------------+---------------------+
+    | *Parameter Name* | *Description*                   | *Required/Optional* |
+    +==================+=================================+=====================+
+    + ``class``        | The fully-qualified name of the | required            |
+    |                  | driver class, including any     |                     |
+    |                  | package and/or module name.     |                     |
+    +------------------+---------------------------------+---------------------+
+    | ``name``         | The logical name to use for the | required            |
+    |                  | driver.                         |                     |
+    +------------------+---------------------------------+---------------------+
+
+For example, suppose you wrote a driver to connect to the `Apache Derby`_
+database (perhaps using `JPype`_). Let's further suppose that the driver is
+implemented by a Python class called ``DerbyDriver`` (which extends the
+Grizzled ``DBDriver`` class) and resides in module ``mycode.db``. You could
+use the following *sqlcmd* configuration section to make *sqlcmd* aware of
+that driver:
+
+.. code-block:: ini
+
+    [driver.derby]
+    class=mycode.db.DerbyDriver
+    name=derby
+    
+With that section in the configuration file, you can now use the value ``derby``
+for the ``type`` parameter in any ``db.`` section.
+
+Obviously, the appropriate supporting Python (and other) code must be available
+to *sqlcmd*, by setting ``PYTHONPATH``, ``LD_LIBRARY_PATH``, and/or ``PATH``,
+as appropriate for your operating system.
+
+.. _Apache Derby: http://db.apache.org/derby/
+.. _JPype: http://jpype.sourceforge.net/
+
+
 Other Sections
 ~~~~~~~~~~~~~~
+
+*sqlcmd* quietly ignores any other sections in the configuration file. One
+possible use for other sections is as holders for common variable definitions
+that are substituted in other places in the file. For instance, suppose all
+your database engine happen to be on the same host and happen to use the same
+user name and password. To share that common configuration information, you
+might do something like the following:
+
+.. code-block:: ini
+
+    [defs]
+    # Shared definitions
+    dbhost=db.example.com
+    admin_user=admin
+    admin_password=foo.bar
+
+    [db.testdb]
+    names=sqlite, test
+    database=/tmp/test.db
+    type=sqlite
+
+    [db.customers]
+    names=oracle
+    database=customers
+    type=oracle
+    host=${dbhost}
+    user=${admin_user}
+    password=${admin_password}
+
+    [db.mydb]
+    names=postgres
+    database=mydb
+    type=postgresql
+    host=${dbhost}
+    user=${admin_user}
+    password=${admin_password}
 
 
 The *sqlcmd* Command Line Interface
@@ -240,19 +461,12 @@ transcript, to whet your whistle::
     Using readline for history management.
     Loading history file "/home/bmc/.sqlcmd/mydb.hist"
     ? .set
-
-    .set
-
     autocommit = true
     binarymax  = 20
-    echo       = true
+    echo       = false
     showbinary = false
     stacktrace = false
     timings    = true
-    ? .set echo false
-
-    .set echo false
-
     ? .show tables;
     users
     customers
@@ -275,10 +489,11 @@ transcript, to whet your whistle::
     Execution time: 0.092 seconds
     2 rows
 
-    id companyid lastname firstname middleinitial username email          
+    id companyid lastname firstname middleinitial username email
     -- --------- -------- --------- ------------- -------- ---------------
      1         1 Clapper  Brian     M             bmc      bmc@clapper.org
      2         1 User     Joe       NULL          joe      joe@example.org
+
 
 SQL
 ---
@@ -294,83 +509,99 @@ It does **not** wrap its output, however.
 Timings
 ~~~~~~~
 
-By default, *sqlcmd* times how long it takes to execute a SQL statement 
+By default, *sqlcmd* times how long it takes to execute a SQL statement
 and prints the resulting times on the screen. To suppress this behavior,
+set the ``timings`` variable to ``false``::
+
+    .set timings false
 
 
 SQL Echo
 ~~~~~~~~
 
+By default, *sqlcmd* does *not* echo commands to the screen. That's a
+reasonable behavior when you're using *sqlcmd* interactively. However, when
+you're loading a file full of *sqlcmd* statements, you might want each
+statement to be echoed before it is run. To enable command echo, set the
+``echo`` variable to ``true``::
+
+    .set echo true
+    
+Comments
+~~~~~~~~
+
+*sqlcmd* honors (and ignores) SQL comments, as long as each comment is on a
+line by itself. A SQL comment begins with "--".
+
+Example of support syntax::
+
+    -- This is a SQL comment.
+    -- And so is this.
+    
+Example of *unsupported* syntax:
+
+.. code-block:: sql
+
+    INSERT INTO foo VALUES (1); -- initialize foo
+
 *sqlcmd*-specific Commands
 --------------------------
 
 These internal *sqlcmd* commands are one-line commands that do not require
-a trailing semi-colon and cannot be on multiple lines.
+a trailing semi-colon and cannot be on multiple lines. Most (but not all)
+of these commands start with a dot (".") character, to distinguish them
+from commands that are processed by the connected database engine.
 
-``.set.``
+``begin``
 ~~~~~~~~~
 
-The ``.set`` command displays or alters internal *sqlcmd* variables. Without
-any parameters, ``.set`` displays all internal variables and their values::
+Start a new transaction. This command is not permitted unless ``autocommit``
+is ``true``. (See `.set`_) ``begin`` is essentially a no-op: It's ignored in
+autocommit mode, and irrelevant when autocommit mode is off. It's there
+primarily for SQL scripts.
 
-    ? .set
+Example of use:
 
-    .set
+.. code-block:: sql
 
-    autocommit = true
-    binarymax  = 20
-    echo       = true
-    showbinary = false
-    stacktrace = false
-    timings    = true
+    begin
+    update foo set bar = 1;
+    commit
+    
+For compatibility with SQL scripts, this command does not begin with a ".".
+
+See also:
+
+- `.set`_
+- `commit`_
+- `rollback`_
+
+``commit``
+~~~~~~~~~~
+
+Commit the current transaction. Ignored if ``autocommit`` is enabled. For
+compatibility with SQL scripts, this command does not begin with a ".".
+
+See also:
+
+- `.set`_
+- `begin`_
+- `rollback`_
 
 
-The supported variables are:
+``.connect``
+~~~~~~~~~~~~
 
-    +----------------+---------------------------------------------------------+
-    | *Variable*     | *Meaning*                                               |
-    +================+=========================================================+
-    | ``autocommit`` | Whether or not each SQL statement automatically commits |
-    |                | commits to the database. If ``true``, then each SQL     |
-    |                | statement is automatically committed to the database.   |
-    |                | If ``false``, then a new set of SQL statements starts a |
-    |                | transaction, which must be explicitly committed via the |
-    |                | ``commit`` command. Also, if ``autocommit`` is ``false``|
-    |                | the ``rollback`` command is enabled.                    |
-    |                |                                                         |
-    |                | Default: ``true``                                       |
-    +----------------+---------------------------------------------------------+
-    | ``binarymax``  | How many bytes to display from binary (BLOB and CLOB)   |
-    |                | columns. Ignored unless ``showbinary`` is ``true``.     |
-    |                |                                                         |
-    |                | Default: 20                                             |
-    +----------------+---------------------------------------------------------+
-    | ``echo``       | Whether or not commands are echoed before they are      |
-    |                | executed.                                               |
-    |                |                                                         |
-    |                | Default: ``true``                                       |
-    +----------------+---------------------------------------------------------+
-    | ``showbinary`` | Whether or not to show data from binary (CLOB or BLOB)  |
-    |                | columns. If ``true``, the value of ``binarymax``        |
-    |                | dictates how many bytes to display.                     |
-    |                |                                                         |
-    |                | Default: ``false``                                      |
-    +----------------+---------------------------------------------------------+
-    | ``stacktrace`` | Whether to display a Python stack trace on normal       |
-    |                | (i.e., expected) errors, like SQL syntax errors.        |
-    |                |                                                         |
-    |                | Default: ``false``                                      |
-    +----------------+---------------------------------------------------------+
-    | ``timings``    | Whether to display execution times for SQL statements.  |
-    |                |                                                         |
-    |                | Default: ``true``                                       |
-    +----------------+---------------------------------------------------------+
+The ``.connect`` command closes the current database connection and opens
+a new one to a (possibly) different database. The general form of the command
+is::
 
-``.show``
-~~~~~~~~~
+    .connect dbname
 
-The ``.show`` command currently only supports one parameter: ``tables``.
-It's used to display the names of all tables in the database.
+*dbname* is a database name from the configuration file. When it first starts
+running, *sqlcmd* issues an implicit ``.connect`` to the database specified
+on the command line.
+
 
 ``.describe``
 ~~~~~~~~~~~~~
@@ -379,8 +610,8 @@ The ``.describe`` command, which can be abbreviated ``.desc``, is used to
 describe a table. The general form of the command is::
 
     .describe tablename [full]
-    
-If "full" is not specified, then *sqlcmd* prints a simple description of the 
+
+If "full" is not specified, then *sqlcmd* prints a simple description of the
 table and its columns. For instance::
 
     ? .desc users
@@ -428,3 +659,166 @@ the table's indexes. For example::
     etuserak1 Columns:     (companyid, username)
               Description: Unique, non-clustered btree index
 
+
+``.history``
+~~~~~~~~~~~~
+
+``.history`` displays the command history. See `Command History`_ for a
+complete explanation of *sqlcmd*'s command history capabilities.
+
+``.load``
+~~~~~~~~~
+
+Loads an external file of commands (typically SQL) and runs those commands in
+the current session *without exiting*. After the commands are run, *sqlcmd*
+returns to its interactive prompt. ``.load`` can be invoked in several ways::
+
+    .load path
+    @ path
+    @path
+    
+All three commands do exactly the same thing.
+
+``rollback``
+~~~~~~~~~~~~
+
+Roll the current transaction back. Ignored if ``autocommit`` is enabled. For
+compatibility with SQL scripts, this command does not begin with a ".".
+
+See also:
+
+- `.set`_
+- `begin`_
+- `commit`_
+
+
+``.set``
+~~~~~~~~~
+
+The ``.set`` command displays or alters internal *sqlcmd* variables. Without
+any parameters, ``.set`` displays all internal variables and their values::
+
+    ? .set
+    autocommit = true
+    binarymax  = 20
+    echo       = true
+    showbinary = false
+    stacktrace = false
+    timings    = true
+
+
+The supported variables are:
+
+    +----------------+---------------------------------------------+----------+
+    | *Variable*     | *Meaning*                                   | Default  |
+    +================+=============================================+==========+
+    | ``autocommit`` | Whether or not each SQL statement           | ``true`` |
+    |                | automatically commits to the database. If   |          |
+    |                | ``true``, then each SQL statement is        |          |
+    |                | automatically committed to the database. If |          |
+    |                | ``false``, then a new set of SQL statements |          |
+    |                | starts a transaction, which must be         |          |
+    |                | explicitly committed via the ``commit``     |          |
+    |                | command. Also, if ``autocommit`` is         |          |
+    |                | ``false``, the ``rollback`` command is      |          |
+    |                | enabled.                                    |          |
+    +----------------+---------------------------------------------+----------+
+    | ``binarymax``  | How many bytes to display from binary (BLOB | 20       |
+    |                | and CLOB) columns. Ignored unless           |          |
+    |                | ``showbinary`` is ``true``.                 |          |
+    +----------------+---------------------------------------------+----------+
+    | ``echo``       | Whether or not commands are echoed before   | ``false``|
+    |                | they are executed.                          |          |
+    +----------------+---------------------------------------------+----------+
+    | ``showbinary`` | Whether or not to show data from binary     | ``false``|
+    |                | (BLOB and CLOB) columns. If ``true``, the   |          |
+    |                | value of ``binarymax`` dictates how many    |          |
+    |                | bytes to display.                           |          |
+    +----------------+---------------------------------------------+----------+
+    | ``stacktrace`` | Whether to display a Python stack trace on  | ``false``|
+    |                | normal (i.e., expected) errors, like SQL    |          |
+    |                | syntax errors.                              |          |
+    +----------------+---------------------------------------------+----------+
+    | ``timings``    | Whether to display execution times for SQL  | ``true`` |
+    |                | statements.                                 |          |
+    +----------------+---------------------------------------------+----------+
+
+``.show``
+~~~~~~~~~
+
+The ``.show`` command currently only supports one parameter: ``tables``.
+It's used to display the names of all tables in the database.
+
+Command History
+---------------
+
+*sqlcmd* supports a `bash`_-like command history mechanism. Every command
+you type at the command prompt is saved in an internal memory buffer, accessible
+via the ``.history`` command.
+
+.. _bash: http://www.gnu.org/software/bash/manual/
+
+Because *sqlcmd* also supports GNU Readline, you can use the standard GNU
+Readline key bindings to scroll through your history list, edit previous
+commands, and re-issue them.
+
+Upon exit, *sqlcmd* saves its internal history buffer to a database-specific
+file. The file's name is adapted from the primary name of the database (*i.e.*,
+from the section name for the database in the configuration file). The
+history files are stored in directory ``.sqlcmd`` under your home directory.
+History files always end with ".hist".
+
+For example, consider this configuration file:
+
+.. code-block:: ini
+
+
+    [db.testdb]
+    names=sqlite, test
+    database=/tmp/test.db
+    type=sqlite
+
+    [db.customers]
+    names=oracle
+    database=customers
+    type=oracle
+    host=db.example.com
+    user=scott
+    password=tiger
+
+The history file for the first database is ``$HOME/.sqlcmd/testdb.hist``, and
+the history file for the second database is ``$HOME/.sqlcmd/customers.hist.``
+
+License and Copyright
+=====================
+
+Copyright © 2008 Brian M. Clapper
+
+This is free software, released under the following BSD-like license:
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+
+2. The end-user documentation included with the redistribution, if any,
+   must include the following acknowledgement:
+
+   This product includes software developed by Brian M. Clapper
+   (bmc@clapper.org, http://www.clapper.org/bmc/). That software is
+   copyright © 2008 Brian M. Clapper.
+
+   Alternately, this acknowlegement may appear in the software itself, if
+   and wherever such third-party acknowlegements normally appear.
+
+THIS SOFTWARE IS PROVIDED **AS IS** AND ANY EXPRESSED OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+EVENT SHALL BRIAN M. CLAPPER BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 

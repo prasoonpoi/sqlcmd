@@ -1,0 +1,4 @@
+include LICENSE README
+recursive-include doc
+exclude sqlcmd.egg-info/*
+exclude *.wpr

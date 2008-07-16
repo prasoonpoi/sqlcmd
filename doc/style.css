@@ -100,3 +100,8 @@ div.highlight pre span.s
 {
     color: green;
 }
+
+ul.simple li
+{
+    list-style: disc;
+}
