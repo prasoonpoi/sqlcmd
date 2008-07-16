@@ -47,7 +47,7 @@ pre.literal-block
     font-size: 10pt;
     width: 80em;
     background-color: white;
-    border: 1px solid black;
+    /* border: 1px solid black; */
     padding: 3px;
 }
 
@@ -62,7 +62,7 @@ div.code-block
     font-family: Andale Mono, Lucidatypewriter, Lucida Typewriter, monospace;
     font-size: 10pt;
     width: 80em;
-    border: 1px solid black;
+    /* border: 1px solid black; */
     padding: 3px;
 }
 

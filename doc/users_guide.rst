@@ -253,11 +253,10 @@ transcript, to whet your whistle::
 
     .set echo false
 
-    ? show tables;
+    ? .show tables;
     users
     customers
-    ? desc users
-    > ;
+    ? .desc users
     -----------
     Table users
     -----------
@@ -284,5 +283,148 @@ transcript, to whet your whistle::
 SQL
 ---
 
+*sqlcmd* will issue any valid SQL command. It does not interpret the SQL
+command at all, beyond recognizing the initial ``SELECT``, ``INSERT``,
+``UPDATE``, etc., statement. Thus, RDBMS-specific SQL is perfectly permissable.
+
+For SQL commands that produce results, such as ``SELECT``, *sqlcmd* displays
+the result in a tabular form, using as little horizontal real estate as possible.
+It does **not** wrap its output, however.
+
+Timings
+~~~~~~~
+
+By default, *sqlcmd* times how long it takes to execute a SQL statement 
+and prints the resulting times on the screen. To suppress this behavior,
+
+
+SQL Echo
+~~~~~~~~
+
 *sqlcmd*-specific Commands
 --------------------------
+
+These internal *sqlcmd* commands are one-line commands that do not require
+a trailing semi-colon and cannot be on multiple lines.
+
+``.set.``
+~~~~~~~~~
+
+The ``.set`` command displays or alters internal *sqlcmd* variables. Without
+any parameters, ``.set`` displays all internal variables and their values::
+
+    ? .set
+
+    .set
+
+    autocommit = true
+    binarymax  = 20
+    echo       = true
+    showbinary = false
+    stacktrace = false
+    timings    = true
+
+
+The supported variables are:
+
+    +----------------+---------------------------------------------------------+
+    | *Variable*     | *Meaning*                                               |
+    +================+=========================================================+
+    | ``autocommit`` | Whether or not each SQL statement automatically commits |
+    |                | commits to the database. If ``true``, then each SQL     |
+    |                | statement is automatically committed to the database.   |
+    |                | If ``false``, then a new set of SQL statements starts a |
+    |                | transaction, which must be explicitly committed via the |
+    |                | ``commit`` command. Also, if ``autocommit`` is ``false``|
+    |                | the ``rollback`` command is enabled.                    |
+    |                |                                                         |
+    |                | Default: ``true``                                       |
+    +----------------+---------------------------------------------------------+
+    | ``binarymax``  | How many bytes to display from binary (BLOB and CLOB)   |
+    |                | columns. Ignored unless ``showbinary`` is ``true``.     |
+    |                |                                                         |
+    |                | Default: 20                                             |
+    +----------------+---------------------------------------------------------+
+    | ``echo``       | Whether or not commands are echoed before they are      |
+    |                | executed.                                               |
+    |                |                                                         |
+    |                | Default: ``true``                                       |
+    +----------------+---------------------------------------------------------+
+    | ``showbinary`` | Whether or not to show data from binary (CLOB or BLOB)  |
+    |                | columns. If ``true``, the value of ``binarymax``        |
+    |                | dictates how many bytes to display.                     |
+    |                |                                                         |
+    |                | Default: ``false``                                      |
+    +----------------+---------------------------------------------------------+
+    | ``stacktrace`` | Whether to display a Python stack trace on normal       |
+    |                | (i.e., expected) errors, like SQL syntax errors.        |
+    |                |                                                         |
+    |                | Default: ``false``                                      |
+    +----------------+---------------------------------------------------------+
+    | ``timings``    | Whether to display execution times for SQL statements.  |
+    |                |                                                         |
+    |                | Default: ``true``                                       |
+    +----------------+---------------------------------------------------------+
+
+``.show``
+~~~~~~~~~
+
+The ``.show`` command currently only supports one parameter: ``tables``.
+It's used to display the names of all tables in the database.
+
+``.describe``
+~~~~~~~~~~~~~
+
+The ``.describe`` command, which can be abbreviated ``.desc``, is used to
+describe a table. The general form of the command is::
+
+    .describe tablename [full]
+    
+If "full" is not specified, then *sqlcmd* prints a simple description of the 
+table and its columns. For instance::
+
+    ? .desc users
+    -----------
+    Table users
+    -----------
+    id             bigint NOT NULL
+    companyid      bigint NOT NULL
+    lastname       character varying(254) NOT NULL
+    firstname      character varying(254) NOT NULL
+    middleinitial  character(1) NULL
+    username       character varying(30) NOT NULL
+    password       character varying(64) NOT NULL
+    email          character varying(254) NOT NULL
+    telephone      character varying(30) NULL
+    department     character varying(254) NULL
+    isenabled      character(1) NOT NULL
+
+If "full" is specified, *sqlcmd* also gathers and displays information about
+the table's indexes. For example::
+
+    ? .desc users
+    -----------
+    Table users
+    -----------
+    id             bigint NOT NULL
+    companyid      bigint NOT NULL
+    lastname       character varying(254) NOT NULL
+    firstname      character varying(254) NOT NULL
+    middleinitial  character(1) NULL
+    username       character varying(30) NOT NULL
+    password       character varying(64) NOT NULL
+    email          character varying(254) NOT NULL
+    telephone      character varying(30) NULL
+    department     character varying(254) NULL
+    isenabled      character(1) NOT NULL
+
+    --------
+    Indexes:
+    --------
+
+    userpk1 Columns:     (id)
+            Description: (PRIMARY) Unique, non-clustered btree index
+    ----------------------------------------------------------------------------
+    etuserak1 Columns:     (companyid, username)
+              Description: Unique, non-clustered btree index
+
