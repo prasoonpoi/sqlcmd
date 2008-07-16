@@ -46,7 +46,9 @@ pre.literal-block
     font-family: Andale Mono, Lucidatypewriter, Lucida Typewriter, monospace;
     font-size: 10pt;
     width: 80em;
-    background-color: white
+    background-color: white;
+    border: 1px solid black;
+    padding: 3px;
 }
 
 /* The following are all for Pygments */
@@ -55,7 +57,8 @@ div.code-block
 {
     margin-left: 2em;
     margin-right: 2em;
-    background-color: #eeeeee;
+    /* background-color: #eeeeee; */
+    background-color: white;
     font-family: Andale Mono, Lucidatypewriter, Lucida Typewriter, monospace;
     font-size: 10pt;
     width: 80em;

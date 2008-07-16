@@ -216,6 +216,71 @@ Other Sections
 The *sqlcmd* Command Line Interface
 ===================================
 
+When run in interactive mode (i.e., without an *@file* parameter_), *sqlcmd*
+prompts on standard input with a "?" and waits for commands to be entered,
+executing each one as it's entered.
+
+.. _parameter: `Parameters`_
+
+Some commands (e.g., all SQL commands, and some others) are not executed until
+a final ";" character is seen on the input; this permits multi-line commands.
+Other commands, such as internal commands like ``.set``, are single-line commands
+and do not require a semi-colon.
+
+Before going into each specific type of command, here's a brief *sqlcmd*
+transcript, to whet your whistle::
+
+    $ sqlcmd mydb
+    SQLCmd, version 0.1 ($Revision: 7794 $)
+    Copyright 2008 Brian M. Clapper.
+
+    Type "help" or "?" for help.
+
+    Connecting to MySQL database "mydb" on host localhost.
+    Using readline for history management.
+    Loading history file "/home/bmc/.sqlcmd/mydb.hist"
+    ? .set
+
+    .set
+
+    autocommit = true
+    binarymax  = 20
+    echo       = true
+    showbinary = false
+    stacktrace = false
+    timings    = true
+    ? .set echo false
+
+    .set echo false
+
+    ? show tables;
+    users
+    customers
+    ? desc users
+    > ;
+    -----------
+    Table users
+    -----------
+    id             bigint NOT NULL
+    companyid      bigint NOT NULL
+    lastname       character varying(254) NOT NULL
+    firstname      character varying(254) NOT NULL
+    middleinitial  character(1) NULL
+    username       character varying(30) NOT NULL
+    password       character varying(64) NOT NULL
+    email          character varying(254) NOT NULL
+    telephone      character varying(30) NULL
+    department     character varying(254) NULL
+    isenabled      character(1) NOT NULL
+    ? select id, companyid, lastname, firstname, middleinitial, username, email from etuser;
+    Execution time: 0.092 seconds
+    2 rows
+
+    id companyid lastname firstname middleinitial username email          
+    -- --------- -------- --------- ------------- -------- ---------------
+     1         1 Clapper  Brian     M             bmc      bmc@clapper.org
+     2         1 User     Joe       NULL          joe      joe@example.org
+
 SQL
 ---
 
