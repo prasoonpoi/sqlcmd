@@ -521,8 +521,11 @@ class SQLCmd(Cmd):
 
         if len(tokens) == 1:
             first = s
+            args = []
+
         else:
             first = tokens[0]
+            args = tokens[1:]
 
         if not self.__in_multiline_command:
             first = first.lower()
@@ -548,36 +551,27 @@ class SQLCmd(Cmd):
             s = ''
 
         elif first.startswith(SQLCmd.META_COMMAND_PREFIX):
-            # The ".set" command and other meta-commands.
-            try:
-                try:
-                    args = tokens[1]
-                except IndexError:
-                    args = ''
-                self.__handle_metacommand(first, args)
-            except NonFatalError, ex:
-                error('%s' % str(ex))
-                if self.__flag_is_set('stacktrace'):
-                    traceback.print_exc()
+            s = ' '.join(['dot_' + first[1:]] + args)
             need_semi = False
-            s = ""
 
         elif s == "EOF":
             skip_history = True
             need_semi = False
 
-        else:
-            s = ' '.join([first] + tokens[1:])
-
-        if first.startswith('@'):
+        elif first.startswith('@'):
             if len(first) > 1:
                 first = 'load ' + first[1:]
             else:
                 first = 'load'
-            s = ' '.join([first] + tokens[1:])
+            s = ' '.join([first] + args)
+            need_semi = False
+
+        else:
+            s = ' '.join([first] + args)
 
         if s == "":
             pass
+
         elif need_semi and (s[-1] != ';'):
             if self.__partial_command == None:
                 self.__partial_command = s
@@ -722,29 +716,6 @@ class SQLCmd(Cmd):
         if self.__flag_is_set('autocommit'):
             self.__db.commit()
 
-    def do_show(self, args):
-        """
-        Run the "show" command.
-        """
-        self.__ensure_connected()
-        cursor = self.__db.cursor()
-
-        try:
-            if args.lower() == 'tables':
-                self.__echo('show', args)
-                tables = cursor.get_tables()
-                tables.sort()
-                for table in tables:
-                    print table
-
-            else:
-                self.__handle_select(args, cursor, command='show')
-        finally:
-            cursor.close()
-
-        if self.__flag_is_set('autocommit'):
-            self.__db.commit()
-
     def do_insert(self, args):
         """
         Run a SQL 'INSERT' statement.
@@ -807,35 +778,6 @@ class SQLCmd(Cmd):
             assert self.__db != None
             self.__db.rollback()
 
-    def do_desc(self, args):
-        """
-        Describe a table. Identical to the 'describe' command.
-
-        Usage: desc tablename [full]
-
-        If 'full' is specified, then the tables indexes are displayed
-        as well (assuming the underlying DB driver supports retrieving
-        index metadata).
-        """
-        self.do_describe(args, cmd='desc')
-
-    def do_describe(self, args, cmd='describe'):
-        """
-        Describe a table. Identical to the 'desc' command.
-
-        Usage: describe tablename [full]
-
-        If 'full' is specified, then the tables indexes are displayed
-        as well (assuming the underlying DB driver supports retrieving
-        index metadata).
-        """
-        self.__ensure_connected()
-        cursor = self.__db.cursor()
-        try:
-            self.__handle_describe(cmd, args, cursor)
-        finally:
-            cursor.close()
-
     def do_EOF(self, args):
         """
         Handles an end-of-file on input.
@@ -860,6 +802,89 @@ class SQLCmd(Cmd):
         interpreters (e.g., Oracle's SQL*Plus) which do have a 'set'
         command.
         """
+        pass
+    
+    def do_dot_set(self, args):
+        """
+        Handles a 'sset' command, to set a sqlcmd variable. With no arguments,
+        this command displays all sqlcmd variables and values.
+
+        Usage: .set [variable value]
+        """
+        self.__echo('.set', args, add_semi=False)
+        set_args = args.split()
+        total_args = len(set_args)
+        if total_args == 0:
+            self.__show_vars()
+            return
+
+        if total_args != 2:
+            raise BadCommandError, 'Incorrect number of arguments'
+
+        varname = set_args[0]
+        try:
+            var = self.__VARS[varname]
+            var.setValueFromString(set_args[1])
+
+        except KeyError:
+            raise BadCommandError, 'No such variable: "%s"' % varname
+
+        except ValueError:
+                raise BadCommandError, 'Bad argument to "set %s"' % varname
+        
+    def do_dot_show(self, args):
+        """
+        Run the "show" command.
+        """
+        self.__ensure_connected()
+        cursor = self.__db.cursor()
+
+        try:
+            if args.lower() == 'tables':
+                self.__echo('.show', args, add_semi=False)
+                tables = cursor.get_tables()
+                tables.sort()
+                for table in tables:
+                    print table
+                    
+            else:
+                raise BadCommandError, \
+                      'Unknown argument(s) to command ".show": %s' % args
+                    
+        finally:
+            cursor.close()
+
+        if self.__flag_is_set('autocommit'):
+            self.__db.commit()
+        
+    def do_dot_desc(self, args):
+        """
+        Describe a table. Identical to the 'describe' command.
+
+        Usage: .desc tablename [full]
+
+        If 'full' is specified, then the tables indexes are displayed
+        as well (assuming the underlying DB driver supports retrieving
+        index metadata).
+        """
+        self.do_dot_describe(args, cmd='.desc')
+
+    def do_dot_describe(self, args, cmd='.describe'):
+        """
+        Describe a table. Identical to the 'desc' command.
+
+        Usage: .describe tablename [full]
+
+        If 'full' is specified, then the tables indexes are displayed
+        as well (assuming the underlying DB driver supports retrieving
+        index metadata).
+        """
+        self.__ensure_connected()
+        cursor = self.__db.cursor()
+        try:
+            self.__handle_describe(cmd, args, cursor)
+        finally:
+            cursor.close()
 
     def help_variables(self):
         print """
@@ -901,14 +926,6 @@ class SQLCmd(Cmd):
     def emptyline(self):
         pass
 
-    def __handle_metacommand(self, command, args):
-        self.__echo(command, args, add_semi=False)
-        command = command[len(SQLCmd.META_COMMAND_PREFIX):]
-        if command == 'set':
-            self.__handle_set(args)
-        else:
-            print 'Unknown sqlcmd meta-command: %s%s' % (command, args)
-
     def __show_vars(self):
         width = 0
         for name in self.__VARS.keys():
@@ -919,27 +936,6 @@ class SQLCmd(Cmd):
         for name in vars:
             v = self.__VARS[name]
             print '%-*s = %s' % (width, v.name, v.strValue())
-
-    def __handle_set(self, set_args):
-        set_args = set_args.split()
-        total_args = len(set_args)
-        if total_args == 0:
-            self.__show_vars()
-            return
-
-        if total_args != 2:
-            raise BadCommandError, 'Incorrect number of arguments'
-
-        varname = set_args[0]
-        try:
-            var = self.__VARS[varname]
-            var.setValueFromString(set_args[1])
-
-        except KeyError:
-            raise BadCommandError, 'No such variable: "%s"' % varname
-
-        except ValueError:
-                raise BadCommandError, 'Bad argument to "set %s"' % varname
 
     def __set_variable(self, varname, value):
         var = self.__VARS[varname]
