@@ -71,26 +71,26 @@ Command Line
 Options
 ~~~~~~~
 
-    -h, --help                    Show a usage message and exit.
+    -h, --help                     Show a usage message and exit.
 
-    -c config, --config=config    Specifies the configuration file to use.
-                                  Defaults to ``$HOME/.sqlcmd/config``.
-                                  Ignored if ``-d`` is specified.
-                                  See `Configuration File`_, below, for
-                                  more information on the format of this file.
+    -c config, --config=config     Specifies the configuration file to use.
+                                   Defaults to ``$HOME/.sqlcmd/config``.
+                                   Ignored if ``-d`` is specified.
+                                   See `Configuration File`_, below, for
+                                   more information on the format of this file.
 
-    -d database, --db=database    Database to use. Format:
-                                  ``dbname,dbtype,host[:port],user,password``
-                                  Overrides any specified *alias*. See
-                                  `Specifying a Database`_, below, for a
-                                  complete explanation of this parameter.
+    -d database, --db=database     Database to use. Format:
+                                   ``dbname,dbtype,host[:port],user,password``
+                                   Overrides any specified *alias*. See
+                                   `Specifying a Database`_, below, for a
+                                   complete explanation of this parameter.
 
-    -l level, --loglevel=level    Enable log messages as level *n*, where *n*
-                                  is one of: ``debug, info, warning, critical,
-                                  error``
+    -l level, --loglevel=level     Enable log messages as level *n*, where *n*
+                                   is one of: ``debug``, ``info``, ``warning``, 
+                                   ``critical``, ``error``.
 
-    -L logfile, --logfile=logfile Dump log messages to *logfile*, instead of
-                                  standard output
+    -L logfile, --logfile=logfile  Dump log messages to *logfile*, instead of
+                                   standard output
 
 .. _Grizzled Utility Library: http://www.clapper.org/software/python/grizzled/
 .. _db: http://www.clapper.org/software/python/grizzled/epydoc/grizzled.db-module.html

@@ -1346,7 +1346,6 @@ class Main(object):
         options, args = opt_parser.parse_args(argv)
 
         args = args[1:]
-        print args
         if not len(args) in (0, 1, 2):
             opt_parser.show_usage('Incorrect number of parameters')
 
