@@ -9,7 +9,7 @@ User's Guide
 :Author: Brian M. Clapper
 :Contact: bmc@clapper.org
 :Date: $Date: 2008-06-01 22:59:33 -0400 (Sun, 01 Jun 2008) $
-:Web site: http://www.clapper.org/software/python/snake/
+:Web site: http://www.clapper.org/software/python/sqlcmd/
 :Copyright: Copyright © 2008 Brian M. Clapper
 
 .. contents::
