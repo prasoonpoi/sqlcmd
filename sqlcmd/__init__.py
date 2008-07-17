@@ -115,7 +115,7 @@ HISTORY_FILE_FORMAT = os.path.join(DEFAULT_CONFIG_DIR, '%s.hist')
 # Globals
 # ---------------------------------------------------------------------------
 
-log = logging.getLogger('sqlcmd')
+log = None
 
 # ---------------------------------------------------------------------------
 # Functions
@@ -126,7 +126,8 @@ def main():
         Main().run(sys.argv)
         rc = 0
     except:
-        log.exception('Error')
+        if log:
+            log.exception('Error')
         rc = 1
         
     return rc
@@ -1419,6 +1420,9 @@ class Main(object):
             hdlr = logging.StreamHandler(sys.stdout)
         else:
             hdlr = logging.FileHandler(file)
+
+        global log
+        log = logging.getLogger('sqlcmd')
 
         if level != None:
             formatter = logging.Formatter('%(asctime)s %(levelname)s '
