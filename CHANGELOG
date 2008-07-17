@@ -1,5 +1,10 @@
 $Id$
 
+Version 0.1.2 (...)
+
+- Fixed parsing error with the "@" command.
+
+---------------------------------------------------------------------------
 Version 0.1.1 (17 July, 2008)
 
 - No longer craps out if $HOME/.sqlcmd/config is missing, but -d (--db)

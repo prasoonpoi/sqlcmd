@@ -77,7 +77,7 @@ from enum import Enum
 # ---------------------------------------------------------------------------
 
 # Info about the module
-__version__   = '0.1.1'
+__version__   = '0.1.2'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
 __url__       = 'http://www.clapper.org/software/python/sqlcmd/'
@@ -547,9 +547,9 @@ class SQLCmd(Cmd):
         self.__scrub_history()
 
         if first.startswith('@'):
-            first = SQLCmd.META_COMMAND_PREFIX + 'load'
             if len(first) > 1:
                 args = [first[1:]] + args
+            first = SQLCmd.META_COMMAND_PREFIX + 'load'
 
         elif first.startswith('!'):
             first = 'r'
