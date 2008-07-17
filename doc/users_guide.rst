@@ -53,6 +53,18 @@ Some features at a glance
 In short, *sqlcmd* is a SQL command tool that attempts to provide the same
 interface for all supported databases and across all platforms.
 
+Prerequisites
+=============
+
+*sqlcmd* requires the following:
+
+- Python_ 2.5 or better
+- The `Grizzled API`_ (automatically installed if you use ``easy_install``
+  to install *sqlcmd*)
+- Appropriate Python DB API drivers for the database(s) you want to use.
+  (See `Database Types`_, below.)
+
+
 Usage
 =====
 
@@ -244,7 +256,7 @@ Multiple ``db.`` sections can exist in the configuration file; each section
 supports the following parameters.
 
     +------------------+---------------------------------+---------------------+
-    | *Parameter Name* | *Description*                   | *Required/Optional* |
+    | Parameter Name   | Description                     | Required/Optional   |
     +==================+=================================+=====================+
     + ``database``     | The name of the database, as    | required            |
     |                  | known by the RDBMS engine.      |                     |
@@ -298,6 +310,41 @@ supports the following parameters.
     |                  | database by multiple names      |                     |
     +------------------+---------------------------------+---------------------+
 
+Database Types
+++++++++++++++
+
+The following database types are supported automatically, provided you have
+the right underlying Python database drivers installed. As noted above, you
+can extend *sqlcmd* to support additional database. See the section on
+`.driver`_, below, for details.
+
+.. _.driver: `dot_driver`_
+
+    +----------------+--------------+-------------------+
+    | Type name used |              | Python DB API     |
+    | with *sqlcmd*  | Database     | module            |
+    +================+==============+===================+
+    | ``mysql``      | MySQL_       | `MySQLdb`_        |
+    +----------------+--------------+-------------------+
+    | ``oracle``     | Oracle_      | `cx_Oracle`_      |
+    +----------------+--------------+-------------------+
+    | ``postgresql`` | PostgreSQL_  | `psycopg2`_       |
+    +----------------+--------------+-------------------+
+    | ``sqlserver``  | Microsoft    | `pymssql`_        |
+    |                | `SQL Server`_|                   |
+    +----------------+--------------+-------------------+
+    | ``sqlite``     | `SQLite 3`_  | sqlite3 (comes    |
+    |                |              | with Python 2.5)  |
+    +----------------+--------------+-------------------+
+    
+.. _psycopg2: http://pypi.python.org/pypi/psycopg2/2.0.4
+.. _MySQLdb: http://sourceforge.net/projects/mysql-python
+.. _Oracle: http://www.oracle.com/
+.. _cx_Oracle: http://python.net/crew/atuining/cx_Oracle/
+.. _SQL Server: http://www.microsoft.com/sqlserver/
+.. _pymssql: http://pymssql.sourceforge.net/
+.. _SQLite 3: http://www.sqlite.org/
+
 A Note about Database Names
 +++++++++++++++++++++++++++
 
@@ -343,6 +390,8 @@ names:
 - ``cust``: a unique abbreviation of ``customers`` or ``cust001``
 
 
+.. _dot_driver:
+
 The ``driver.`` Sections
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -360,7 +409,7 @@ invaluable.
 The ``driver.`` section supports the following options:
 
     +------------------+---------------------------------+---------------------+
-    | *Parameter Name* | *Description*                   | *Required/Optional* |
+    | Parameter Name   | Description                     | Required/Optional   |
     +==================+=================================+=====================+
     + ``class``        | The fully-qualified name of the | required            |
     |                  | driver class, including any     |                     |
@@ -736,7 +785,7 @@ any parameters, ``.set`` displays all internal variables and their values::
 The supported variables are:
 
     +----------------+---------------------------------------------+----------+
-    | *Variable*     | *Meaning*                                   | Default  |
+    | Variable       | Meaning                                     | Default  |
     +================+=============================================+==========+
     | ``autocommit`` | Whether or not each SQL statement           | ``true`` |
     |                | automatically commits to the database. If   |          |
