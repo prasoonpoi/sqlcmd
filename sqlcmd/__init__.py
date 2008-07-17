@@ -105,7 +105,7 @@ BOOL_STRS = { "on"    : True,
               "true"  : True,
               "false" : False }
 
-DEFAULT_CONFIG_DIR = os.path.join(os.environ.get('HOME', os.getcwd()), 
+DEFAULT_CONFIG_DIR = os.path.join(os.environ.get('HOME', os.getcwd()),
                                   '.sqlcmd')
 
 RC_FILE = os.path.join(DEFAULT_CONFIG_DIR, 'config')
@@ -167,14 +167,14 @@ class DBInstanceConfigItem(object):
     Captures information about a database configuration item read from the
     .sqlcmd file in the user's home directory.
     """
-    def __init__(self, 
-                 section, 
-                 aliases, 
-                 host, 
-                 database, 
-                 user, 
-                 password, 
-                 type, 
+    def __init__(self,
+                 section,
+                 aliases,
+                 host,
+                 database,
+                 user,
+                 password,
+                 type,
                  port):
         self.section = section
         self.aliases = aliases
@@ -223,7 +223,7 @@ class SQLCmdConfig(object):
             elif section.startswith('driver.'):
                 # Database driver configuration
                 self.__config_driver(cfg, section)
-                
+
     def __config_db(self, cfg, section):
         primary_name = section[3:] # assumes it starts with 'db.'
         if len(primary_name) == 0:
@@ -274,7 +274,7 @@ class SQLCmdConfig(object):
             pass
 
             try:
-                cfg = DBInstanceConfigItem(section, 
+                cfg = DBInstanceConfigItem(section,
                                            [alias],
                                            host,
                                            database,
@@ -735,7 +735,7 @@ class SQLCmd(Cmd):
         command.
         """
         pass
-    
+
     def do_dot_set(self, args):
         """
         Handles a 'sset' command, to set a sqlcmd variable. With no arguments,
@@ -763,7 +763,7 @@ class SQLCmd(Cmd):
 
         except ValueError:
                 raise BadCommandError, 'Bad argument to "set %s"' % varname
-        
+
     def do_dot_h(self, args):
         """
         Show the current command history. Identical to the 'hist' and
@@ -805,17 +805,17 @@ class SQLCmd(Cmd):
                 tables.sort()
                 for table in tables:
                     print table
-                    
+
             else:
                 raise BadCommandError, \
                       'Unknown argument(s) to command ".show": %s' % args
-                    
+
         finally:
             cursor.close()
 
         if self.__flag_is_set('autocommit'):
             self.__db.commit()
-        
+
     def do_dot_desc(self, args):
         """
         Describe a table. Identical to the 'describe' command.
@@ -924,7 +924,22 @@ class SQLCmd(Cmd):
 
 
     def default(self, s):
-        print 'Unknown command: "%s"' % s
+        # Pass through to database engine, as if it were a SELECT.
+        args = s.split(None, 1)
+        command = args[0]
+        if len(args) == 1:
+            args = ''
+        else:
+            args = args[1]
+
+        self.__ensure_connected()
+        cursor = self.__db.cursor()
+        try:
+            self.__handle_select(args, cursor, command=command)
+        finally:
+            cursor.close()
+        if self.__flag_is_set('autocommit'):
+            self.__db.commit()
 
     def emptyline(self):
         pass
@@ -970,15 +985,15 @@ class SQLCmd(Cmd):
         os.close(fd)
 
         self.__exec_SQL(cursor, command, args)
-        rows = cursor.rowcount
+
+        # Don't rely on the row count from the cursor. It isn't always
+        # reliable.
+        rows, col_names, col_sizes = self.__calculate_column_sizes(cursor, temp)
+
         pl = ""
         if rows != 1:
             pl = "s"
         print "%d row%s\n" % (rows, pl)
-        if rows == 0:
-            return
-
-        col_names, col_sizes = self.__calculate_column_sizes(cursor, temp)
 
         # Now, dump the header with the column names, being sure to
         # honor the padding sizes.
@@ -1068,9 +1083,11 @@ class SQLCmd(Cmd):
 
         f = open(temp_file, "w")
         rs = cursor.fetchone()
+        rows = 0
         while rs != None:
             cPickle.dump(rs, f)
             i = 0
+            rows += 1
             for col_value in rs:
                 col_info = cursor.description[i]
                 type = col_info[1]
@@ -1089,7 +1106,7 @@ class SQLCmd(Cmd):
             rs = cursor.fetchone()
 
         f.close()
-        return (col_names, col_sizes)
+        return (rows, col_names, col_sizes)
 
     def __handle_describe(self, cmd, args, cursor):
         self.__echo(cmd, args)
@@ -1206,7 +1223,7 @@ class SQLCmd(Cmd):
 
             cmd = ' '.join([a for a in args]).strip()
             print '\n%s%s\n' % (cmd, semi)
-        
+
     def __flag_is_set(self, varname):
         return self.__VARS[varname].value
 
