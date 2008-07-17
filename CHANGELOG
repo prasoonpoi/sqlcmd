@@ -8,6 +8,7 @@ Version 0.1.3 (...)
   tilde expansion.
 - Made more improvements to tab-completion, especially for dot (".") commands.
 - Documented how extended (unrecognized) commands are handled.
+- Fixed log handling.
 - Some other internal cleanup.
 
 ---------------------------------------------------------------------------

@@ -63,6 +63,7 @@ import textwrap
 import traceback
 import logging
 import glob
+import textwrap
 from StringIO import StringIO
 
 from grizzled import db, system
@@ -123,32 +124,21 @@ log = None
 # ---------------------------------------------------------------------------
 
 def main():
+    rc = 0
     try:
         Main().run(sys.argv)
-        rc = 0
-    except:
-        raise
-        #if log:
-            #log.exception('Error')
-        #else:
-            #raise
 
-        #rc = 1
+    except KeyboardInterrupt:
+        pass
+
+    except:
+        rc = 1
+        if log:
+            log.exception('Error')
+        else:
+            traceback.print_exc()
 
     return rc
-
-def traced(func):
-    def wrapper(*__args,**__kw):
-        log.debug("entering %s" % (func))
-        try:
-            return func(*__args,**__kw)
-        finally:
-            log.debug("exit %s" % (func))
-
-    wrapper.__name__ = func.__name__
-    wrapper.__dict__ = func.__dict__
-    wrapper.__doc__ = func.__doc__
-    return wrapper
 
 def str2bool(s):
     """Convert a string to a boolean"""
@@ -160,20 +150,42 @@ def str2bool(s):
 
 def die(s):
     """Like Perl's die()"""
-    error(s)
+    log.error(s)
     sys.exit(1)
-
-def error(s):
-    """Print an error message"""
-    print '\n'.join(textwrap.TextWrapper(width=79).wrap('ERROR: %s' % s))
-
-def warning(s):
-    """Print a warning message"""
-    print '\n'.join(textwrap.TextWrapper(width=79).wrap('WARNING: %s' % s))
 
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
+
+class WrappingLogFormatter(logging.Formatter):
+    """
+    A log formatter that writes each message and wraps it on line boundaries.
+    """
+    def __init__(self, format=None, date_format=None, max_width=79):
+        """
+        Initialize a new ``WrappingLogFormatter``.
+
+        :Parameters:
+            format : str
+                The format to use, or ``None`` for the logging default
+
+            date_format : str
+                Date format
+
+            max_width : int
+                Maximum line width
+        """
+        self.wrapper = textwrap.TextWrapper(width=max_width,
+                                            subsequent_indent='    ')
+        logging.Formatter.__init__(self, format, date_format)
+
+    def format(self, record):
+        s = logging.Formatter.format(self, record)
+        result = []
+        for line in s.split('\n'):
+            result += [self.wrapper.fill(line)]
+
+        return '\n'.join(result)
 
 class DBInstanceConfigItem(object):
     """
@@ -439,7 +451,7 @@ class SQLCmd(Cmd):
     NO_SEMI_NEEDED.add('eof')
 
     VAR_TYPES = Enum('boolean', 'string', 'integer')
-    
+
     def __init__(self, cfg):
         Cmd.__init__(self)
         self.prompt = "? "
@@ -507,13 +519,13 @@ class SQLCmd(Cmd):
         try:
             stop = Cmd.onecmd(self, line)
         except NonFatalError, ex:
-            error('%s' % str(ex))
+            log.error('%s' % str(ex))
             if self.__flag_is_set('stacktrace'):
                 traceback.print_exc()
         except db.Warning, ex:
-            warning('%s' % str(ex))
+            log.warning('%s' % str(ex))
         except db.Error, ex:
-            error('%s' % str(ex))
+            log.error('%s' % str(ex))
             if self.__flag_is_set('stacktrace'):
                 traceback.print_exc()
             if self.__db != None: # mostly a hack for PostgreSQL
@@ -531,7 +543,6 @@ class SQLCmd(Cmd):
         assert(config_item != None)
         self.__db_config = config_item
 
-    @traced
     def precmd(self, s):
         s = s.strip()
         tokens = s.split(None, 1)
@@ -634,7 +645,7 @@ class SQLCmd(Cmd):
         Parse the line into a command name and a string containing
         the arguments.  Returns a tuple containing (command, args, line).
         'command' and 'args' may be None if the line couldn't be parsed.
-        
+
         Overrides the parent class's version of this method, to handle
         dot commands.
         """
@@ -644,7 +655,7 @@ class SQLCmd(Cmd):
             if len(cmd) > 1:
                 s += '_%s' % cmd[1:]
             cmd = s
-            
+
         return cmd, arg, line
 
     def complete_dot(self, text, line, start_index, end_index):
@@ -845,7 +856,9 @@ class SQLCmd(Cmd):
         off. It's there primarily for SQL scripts.
         """
         self.__ensure_connected()
-
+        if self.__flag_is_set('autocommit'):
+            log.warning('Autocommit is enabled. "begin" ignored')
+ 
     def do_commit(self, args):
         """
         Commit the current transaction. Ignored if 'autocommit' is enabled.
@@ -853,7 +866,7 @@ class SQLCmd(Cmd):
         """
         self.__ensure_connected()
         if self.__flag_is_set('autocommit'):
-            warning('Autocommit is enabled. "commit" ignored')
+            log.warning('Autocommit is enabled. "commit" ignored')
         else:
             assert self.__db != None
             self.__db.commit()
@@ -865,7 +878,7 @@ class SQLCmd(Cmd):
         """
         self.__ensure_connected()
         if self.__flag_is_set('autocommit'):
-            warning('Autocommit is enabled. "rollback" ignored')
+            log.warning('Autocommit is enabled. "rollback" ignored')
         else:
             assert self.__db != None
             self.__db.rollback()
@@ -882,9 +895,9 @@ class SQLCmd(Cmd):
             try:
                 self.__db.close()
             except db.Warning, ex:
-                warning('%s' % str(ex))
+                log.warning('%s' % str(ex))
             except db.Error, ex:
-                error('%s' % str(ex))
+                log.error('%s' % str(ex))
         return True
 
     def do_set(self, args):
@@ -1076,7 +1089,7 @@ class SQLCmd(Cmd):
         try:
             self.__load_file(tokens[0])
         except IOError, (ex, msg):
-            error('Unable to load file "%s": %s' % (tokens[0], msg))
+            log.error('Unable to load file "%s": %s' % (tokens[0], msg))
 
     def complete_dot_load(self, text, line, start_index, end_index):
         matches = []
@@ -1113,7 +1126,7 @@ class SQLCmd(Cmd):
                     matches = [filename]
                 else:
                     matches = [f for f in files if f.startswith(filename)]
-                    
+
             else:
                 matches = files
 
@@ -1155,7 +1168,7 @@ class SQLCmd(Cmd):
         if len(text.strip()) > 0:
             aliases = [a for a in aliases if a.startswith(text)]
 
-        return aliases        
+        return aliases
 
     def help_variables(self):
         print """
@@ -1364,18 +1377,18 @@ class SQLCmd(Cmd):
                     col_sizes += [max(name_size, len(SQLCmd.BINARY_VALUE_MARKER))]
                 else:
                     col_sizes += [name_size]
-    
+
             # Write the results (pickled) to a temporary file. We'll iterate
             # through them twice: Once to calculate the column sizes, the
             # second time to display them.
-    
+
             if cursor.rowcount > 1000:
                 print "Processing result set..."
-    
+
             max_binary = self.__VARS['binarymax'].value
             if max_binary < 0:
                 max_binary = sys.maxint
-    
+
             f = open(temp_file, "w")
             rs = cursor.fetchone()
             while rs != None:
@@ -1393,12 +1406,12 @@ class SQLCmd(Cmd):
                             size = len(SQLCmd.BINARY_VALUE_MARKER)
                     else:
                         size = len(str(col_value))
-    
+
                     col_sizes[i] = max(col_sizes[i], size)
                     i += 1
-    
+
                 rs = cursor.fetchone()
-    
+
             f.close()
 
         return (rows, col_names, col_sizes)
@@ -1602,7 +1615,7 @@ class Main(object):
         try:
             cfg.load_file(self.__config_file)
         except IOError, ex:
-            warning(str(ex))
+            log.warning(str(ex))
         except ConfigurationError, ex:
             die(str(ex))
 
@@ -1677,7 +1690,7 @@ class Main(object):
         self.__input_file = None
         self.__alias = None
         self.__db_connect_info = None
-        self.__log_level = options.loglevel
+        self.__log_level = LOG_LEVELS[options.loglevel]
         self.__log_file = options.logfile
         self.__config_file = options.config
 
@@ -1708,28 +1721,34 @@ class Main(object):
         if self.__db_connect_info and self.__alias:
             opt_parser.show_usage('You cannot specify both an alias and "-d"')
 
-    def __init_logging(self, level, file):
+    def __init_logging(self, level, filename):
         """Initialize logging subsystem"""
-        if file == None:
-            log_handler = logging.StreamHandler(sys.stdout)
-        else:
-            log_handler = logging.FileHandler(file)
+        date_format = '%H:%M:%S'
+
+        stderr_handler = logging.StreamHandler(sys.stderr)
+        formatter = WrappingLogFormatter(format='%(levelname)s: %(message)s')
+        stderr_handler.setLevel(logging.WARNING)
+        stderr_handler.setFormatter(formatter)
+        handlers = [stderr_handler]
+
+        if filename:
+            file_handler = logging.FileHandler(filename)
+            handlers.append(file_handler)
+
+            msg_format  = '%(asctime)s %(levelname)s (%(name)s) %(message)s'
+            formatter = WrappingLogFormatter(format=msg_format,
+                                             date_format=date_format)
+            if level == None:
+                level = logging.WARNING
+
+            file_handler.setLevel(level)
+            file_handler.setFormatter(formatter)
 
         global log
         log = logging.getLogger('sqlcmd')
 
-        if level == None:
-            level = logging.ERROR
-
-        formatter = logging.Formatter('%(asctime)s %(levelname)s '
-                                      '(%(name)s) %(message)s', '%T')
-
-        logging.basicConfig(level=level)
-        log_handler.setLevel(level)
-        log_handler.setFormatter(formatter)
         root_logger = logging.getLogger('')
-        root_logger.handlers = [log_handler]
-        root_logger.setLevel(level)
+        root_logger.handlers = handlers
 
 if __name__ == '__main__':
     sys.exit(main())
