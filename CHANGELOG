@@ -1,5 +1,16 @@
 $Id$
+---------------------------------------------------------------------------
 
+Version 0.1.3 (...)
+
+- "@" is no longer an alias for ".load". It's too complicated to support.
+- ".load" will now do file-name completion on its argument, including
+  tilde expansion.
+- Made more improvements to tab-completion, especially for dot (".") commands.
+- Documented how extended (unrecognized) commands are handled.
+- Some other internal cleanup.
+
+---------------------------------------------------------------------------
 Version 0.1.2 (17 July, 2008)
 
 - Fixed parsing error with the "@" command.

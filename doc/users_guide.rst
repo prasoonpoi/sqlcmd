@@ -483,8 +483,8 @@ might do something like the following:
     password=${admin_password}
 
 
-The *sqlcmd* Command Line Interface
-===================================
+Using *sqlcmd*
+==============
 
 When run in interactive mode (i.e., without an *@file* parameter_), *sqlcmd*
 prompts on standard input with a "?" and waits for commands to be entered,
@@ -705,8 +705,8 @@ the table's indexes. For example::
     userpk1 Columns:     (id)
             Description: (PRIMARY) Unique, non-clustered btree index
     ----------------------------------------------------------------------------
-    etuserak1 Columns:     (companyid, username)
-              Description: Unique, non-clustered btree index
+    userak1 Columns:     (companyid, username)
+            Description: Unique, non-clustered btree index
 
 
 ``.history``
@@ -781,7 +781,6 @@ any parameters, ``.set`` displays all internal variables and their values::
     stacktrace = false
     timings    = true
 
-
 The supported variables are:
 
     +----------------+---------------------------------------------+----------+
@@ -824,6 +823,60 @@ The supported variables are:
 The ``.show`` command currently only supports one parameter: ``tables``.
 It's used to display the names of all tables in the database.
 
+Extended Commands
+-----------------
+
+If you type a command that *sqlcmd* doesn't recognize as a SQL command or one 
+of its internal commands, it passes the command straight through to the
+database and treats the command as it would treate a SQL ``SELECT``. This
+policy allows you to use certain RDBMS-specific commands without *sqlcmd*
+having to support them explicitly. For instance, here's what happens if you've
+connected *sqlcmd* to a SQLite database and you try to use the SQLite 
+``EXPLAIN`` command::
+
+    ? explain select distinct id from foo;
+    Execution time: 0.000 seconds
+    20 rows
+    
+    addr opcode        p1 p2 p3               
+    ---- ------------- -- -- -----------------
+    0    OpenEphemeral 1  0  keyinfo(1,BINARY)
+    1    Goto          0  16                  
+    2    Integer       0  0                   
+    3    OpenRead      0  2                   
+    4    SetNumColumns 0  1                   
+    5    Rewind        0  14                  
+    6    Column        0  0                   
+    7    MakeRecord    -1 0                   
+    8    Distinct      1  11                  
+    9    Pop           2  0                   
+    10   Goto          0  13                  
+    11   IdxInsert     1  0                   
+    12   Callback      1  0                   
+    13   Next          0  6                   
+    14   Close         0  0                   
+    15   Halt          0  0                   
+    16   Transaction   0  0                   
+    17   VerifyCookie  0  1                   
+    18   Goto          0  2                   
+    19   Noop          0  0                   
+    
+Similarly, here's what happens when you run the ``ANALYZE`` command on a
+PostgreSQL database::
+
+    ? analyze verbose;
+    Execution time: 0.054 seconds
+    0 rows
+
+Restrictions
+~~~~~~~~~~~~
+
+- Some extended commands don't work well through *sqlcmd*. Your mileage
+  may vary.
+- Since these extended commands are database-specific, they do not show
+  up in command completion output, and they do not support command completion
+  themselves.
+
 Command History
 ---------------
 
@@ -846,7 +899,6 @@ History files always end with ".hist".
 For example, consider this configuration file:
 
 .. code-block:: ini
-
 
     [db.testdb]
     names=sqlite, test
@@ -901,6 +953,18 @@ Command Completion
 
 ``.history s<TAB>``
     Shows the names of all commands in the history beginning with "s".
+
+``.load <TAB>``
+    Lists all the files in the current directory
+    
+``.load f<TAB>``
+    Lists all the files in the current directory that start with "s"
+    
+``.load ~/<TAB>``
+    Lists all the files in your home directory
+
+``.load ~/d<TAB>``
+    Lists all the files in your home directory that start with "d"
 
 etc.
 

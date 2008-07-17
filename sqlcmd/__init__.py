@@ -62,6 +62,7 @@ import time
 import textwrap
 import traceback
 import logging
+import glob
 from StringIO import StringIO
 
 from grizzled import db, system
@@ -77,7 +78,7 @@ from enum import Enum
 # ---------------------------------------------------------------------------
 
 # Info about the module
-__version__   = '0.1.2'
+__version__   = '0.1.3'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
 __url__       = 'http://www.clapper.org/software/python/sqlcmd/'
@@ -126,9 +127,13 @@ def main():
         Main().run(sys.argv)
         rc = 0
     except:
-        if log:
-            log.exception('Error')
-        rc = 1
+        raise
+        #if log:
+            #log.exception('Error')
+        #else:
+            #raise
+
+        #rc = 1
 
     return rc
 
@@ -554,11 +559,6 @@ class SQLCmd(Cmd):
 
         self.__scrub_history()
 
-        if first.startswith('@'):
-            if len(first) > 1:
-                args = [first[1:]] + args
-            first = SQLCmd.META_COMMAND_PREFIX + 'load'
-
         need_semi = not first in SQLCmd.NO_SEMI_NEEDED;
         if first.startswith(SQLCmd.COMMENT_PREFIX):
             # Comments are handled specially. Rather than transform them
@@ -629,43 +629,23 @@ class SQLCmd(Cmd):
 
         return result
 
-    def complete(self, text, state):
+    def parseline(self, line):
         """
-        Return the next possible completion for 'text'.
-
-        If a command has not been entered, then complete against command list.
-        Otherwise try to call complete_<command> to get list of completions.
+        Parse the line into a command name and a string containing
+        the arguments.  Returns a tuple containing (command, args, line).
+        'command' and 'args' may be None if the line couldn't be parsed.
+        
+        Overrides the parent class's version of this method, to handle
+        dot commands.
         """
-        if state == 0:
-            import readline
-            origline = readline.get_line_buffer()
-            line = origline.lstrip()
-            stripped = len(origline) - len(line)
-            begidx = readline.get_begidx() - stripped
-            endidx = readline.get_endidx() - stripped
-            if begidx>0:
-                cmd, args, foo = self.parseline(line)
-                if cmd == '':
-                    compfunc = self.completedefault
-                else:
-                    if cmd.startswith('.'):
-                        s = 'dot'
-                        if len(cmd) > 1:
-                            s += '_%s' % cmd[1:]
-                        cmd = s
-
-                    try:
-                        compfunc = getattr(self, 'complete_' + cmd)
-                    except AttributeError:
-                        compfunc = self.completedefault
-            else:
-                compfunc = self.completenames
-
-            self.completion_matches = compfunc(text, line, begidx, endidx)
-        try:
-            return self.completion_matches[state]
-        except IndexError:
-            return None
+        cmd, arg, line = Cmd.parseline(self, line)
+        if cmd and cmd.startswith('.'):
+            s = 'dot'
+            if len(cmd) > 1:
+                s += '_%s' % cmd[1:]
+            cmd = s
+            
+        return cmd, arg, line
 
     def complete_dot(self, text, line, start_index, end_index):
         return [n for n in self.completenames('') if n.startswith('.')]
@@ -1077,7 +1057,7 @@ class SQLCmd(Cmd):
             cursor.close()
 
     def complete_dot_desc(self, text, line, start_index, end_index):
-        return complete_dot_describe(text, line, start_index, end_index)
+        return self.__complete_tables(text)
 
     def complete_dot_describe(self, text, line, start_index, end_index):
         return self.__complete_tables(text)
@@ -1088,17 +1068,61 @@ class SQLCmd(Cmd):
         shell.
 
         Usage: .load file
-               @ file
-               @file
         """
         tokens = args.split(None, 1)
         if len(tokens) > 1:
-            raise BadCommandError, 'Too many arguments to "load" ("@")'
+            raise BadCommandError, 'Too many arguments to ".load"'
 
         try:
             self.__load_file(tokens[0])
         except IOError, (ex, msg):
             error('Unable to load file "%s": %s' % (tokens[0], msg))
+
+    def complete_dot_load(self, text, line, start_index, end_index):
+        matches = []
+        if text == None:
+            text == ''
+        text = text.strip()
+
+        if text.startswith('~'):
+            text = os.path.expanduser(text)
+
+        if len(text) == 0:
+            directory = '.'
+            filename = None
+            include_directory = False
+
+        elif not (os.path.sep in text):
+            directory = '.'
+            filename = text
+            include_directory = False
+
+        else:
+            if os.path.isdir(text) or text[-1] == os.path.sep:
+                directory = text
+                filename = None
+            else:
+                directory = os.path.dirname(text)
+                filename = os.path.basename(text)
+            include_directory = True
+
+        if directory:
+            files = os.listdir(directory)
+            if filename:
+                if filename in files:
+                    matches = [filename]
+                else:
+                    matches = [f for f in files if f.startswith(filename)]
+                    
+            else:
+                matches = files
+
+            if matches:
+                matches = [f for f in matches if f[0] != '.']
+                if include_directory:
+                    matches = [os.path.join(directory, f) for f in matches]
+
+        return matches
 
     def do_dot_connect(self, args):
         """
@@ -1259,6 +1283,11 @@ class SQLCmd(Cmd):
             pl = "s"
         print "%d row%s\n" % (rows, pl)
 
+        if rows > 0:
+            self.__dump_result_set(rows, col_names, col_sizes, temp, cursor)
+
+    def __dump_result_set(self, rows, col_names, col_sizes, temp, cursor):
+
         # Now, dump the header with the column names, being sure to
         # honor the padding sizes.
 
@@ -1326,50 +1355,52 @@ class SQLCmd(Cmd):
     def __calculate_column_sizes(self, cursor, temp_file):
         col_names = []
         col_sizes = []
-        for col in cursor.description:
-            col_names += [col[0]]
-            name_size = len(col[0])
-            if col[1] == self.__db.BINARY:
-                col_sizes += [max(name_size, len(SQLCmd.BINARY_VALUE_MARKER))]
-            else:
-                col_sizes += [name_size]
-
-        # Write the results (pickled) to a temporary file. We'll iterate
-        # through them twice: Once to calculate the column sizes, the
-        # second time to display them.
-
-        if cursor.rowcount > 1000:
-            print "Processing result set..."
-
-        max_binary = self.__VARS['binarymax'].value
-        if max_binary < 0:
-            max_binary = sys.maxint
-
-        f = open(temp_file, "w")
-        rs = cursor.fetchone()
         rows = 0
-        while rs != None:
-            cPickle.dump(rs, f)
-            i = 0
-            rows += 1
-            for col_value in rs:
-                col_info = cursor.description[i]
-                type = col_info[1]
-                if type == self.__db.BINARY:
-                    if self.__flag_is_set('showbinary'):
-                        size = len(col_value.translate(SQLCmd.BINARY_FILTER))
-                        size = min(size, max_binary)
-                    else:
-                        size = len(SQLCmd.BINARY_VALUE_MARKER)
+        if cursor.description:
+            for col in cursor.description:
+                col_names += [col[0]]
+                name_size = len(col[0])
+                if col[1] == self.__db.BINARY:
+                    col_sizes += [max(name_size, len(SQLCmd.BINARY_VALUE_MARKER))]
                 else:
-                    size = len(str(col_value))
-
-                col_sizes[i] = max(col_sizes[i], size)
-                i += 1
-
+                    col_sizes += [name_size]
+    
+            # Write the results (pickled) to a temporary file. We'll iterate
+            # through them twice: Once to calculate the column sizes, the
+            # second time to display them.
+    
+            if cursor.rowcount > 1000:
+                print "Processing result set..."
+    
+            max_binary = self.__VARS['binarymax'].value
+            if max_binary < 0:
+                max_binary = sys.maxint
+    
+            f = open(temp_file, "w")
             rs = cursor.fetchone()
+            while rs != None:
+                cPickle.dump(rs, f)
+                i = 0
+                rows += 1
+                for col_value in rs:
+                    col_info = cursor.description[i]
+                    type = col_info[1]
+                    if type == self.__db.BINARY:
+                        if self.__flag_is_set('showbinary'):
+                            size = len(col_value.translate(SQLCmd.BINARY_FILTER))
+                            size = min(size, max_binary)
+                        else:
+                            size = len(SQLCmd.BINARY_VALUE_MARKER)
+                    else:
+                        size = len(str(col_value))
+    
+                    col_sizes[i] = max(col_sizes[i], size)
+                    i += 1
+    
+                rs = cursor.fetchone()
+    
+            f.close()
 
-        f.close()
         return (rows, col_names, col_sizes)
 
     def __handle_describe(self, cmd, args, cursor):
@@ -1471,6 +1502,14 @@ class SQLCmd(Cmd):
         self.__history = history.get_history()
         self.__history.max_length = SQLCmd.DEFAULT_HISTORY_MAX
         self.use_rawinput = self.__history.use_raw_input()
+
+        completer_delims = self.__history.get_completer_delims()
+        new_delims = ''
+        for c in completer_delims:
+            if c not in ['~', '/']:
+                new_delims += c
+
+        self.__history.set_completer_delims(new_delims)
 
         if self.__history_file != None:
             try:
@@ -1672,21 +1711,25 @@ class Main(object):
     def __init_logging(self, level, file):
         """Initialize logging subsystem"""
         if file == None:
-            hdlr = logging.StreamHandler(sys.stdout)
+            log_handler = logging.StreamHandler(sys.stdout)
         else:
-            hdlr = logging.FileHandler(file)
+            log_handler = logging.FileHandler(file)
 
         global log
         log = logging.getLogger('sqlcmd')
 
-        if level != None:
-            formatter = logging.Formatter('%(asctime)s %(levelname)s '
-                                          '(%(name)s) %(message)s', '%T')
-            hdlr.setFormatter(formatter)
-            root_logger = logging.getLogger(None)
-            root_logger.addHandler(hdlr)
-            root_logger.setLevel(level)
+        if level == None:
+            level = logging.ERROR
 
+        formatter = logging.Formatter('%(asctime)s %(levelname)s '
+                                      '(%(name)s) %(message)s', '%T')
+
+        logging.basicConfig(level=level)
+        log_handler.setLevel(level)
+        log_handler.setFormatter(formatter)
+        root_logger = logging.getLogger('')
+        root_logger.handlers = [log_handler]
+        root_logger.setLevel(level)
 
 if __name__ == '__main__':
     sys.exit(main())

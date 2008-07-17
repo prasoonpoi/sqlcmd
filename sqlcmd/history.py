@@ -107,6 +107,12 @@ class History(object):
     def get_item(self, index):
         return None
 
+    def set_completer_delims(self, s):
+        pass
+    
+    def get_completer_delims(self):
+        return ''
+
     @property
     def total(self):
         """The total size of the history"""
@@ -211,6 +217,12 @@ class ReadlineHistory(History):
 
     def get_total(self):
         return readline.get_current_history_length()
+
+    def set_completer_delims(self, s):
+        readline.set_completer_delims(s)
+    
+    def get_completer_delims(self,):
+        return readline.get_completer_delims()
 
     def remove_item(self, index):
         # readline.remove_history_item() doesn't seem to work. Do it the

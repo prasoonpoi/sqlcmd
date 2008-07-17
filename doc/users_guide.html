@@ -174,7 +174,7 @@ ul.simple li
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#the-sqlcmd-command-line-interface" id="id18">The <em>sqlcmd</em> Command Line Interface</a><ul>
+<li><a class="reference internal" href="#using-sqlcmd" id="id18">Using <em>sqlcmd</em></a><ul>
 <li><a class="reference internal" href="#sql" id="id19">SQL</a><ul>
 <li><a class="reference internal" href="#timings" id="id20">Timings</a></li>
 <li><a class="reference internal" href="#sql-echo" id="id21">SQL Echo</a></li>
@@ -194,11 +194,15 @@ ul.simple li
 <li><a class="reference internal" href="#show" id="id33"><tt class="docutils literal"><span class="pre">.show</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#command-history" id="id34">Command History</a></li>
-<li><a class="reference internal" href="#command-completion" id="id35">Command Completion</a></li>
+<li><a class="reference internal" href="#extended-commands" id="id34">Extended Commands</a><ul>
+<li><a class="reference internal" href="#restrictions" id="id35">Restrictions</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#license-and-copyright" id="id36">License and Copyright</a></li>
+<li><a class="reference internal" href="#command-history" id="id36">Command History</a></li>
+<li><a class="reference internal" href="#command-completion" id="id37">Command Completion</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#license-and-copyright" id="id38">License and Copyright</a></li>
 </ul>
 </div>
 <div class="section" id="introduction">
@@ -702,8 +706,8 @@ might do something like the following:</p>
 </div>
 </div>
 </div>
-<div class="section" id="the-sqlcmd-command-line-interface">
-<h1><a class="toc-backref" href="#id18">The <em>sqlcmd</em> Command Line Interface</a></h1>
+<div class="section" id="using-sqlcmd">
+<h1><a class="toc-backref" href="#id18">Using <em>sqlcmd</em></a></h1>
 <p>When run in interactive mode (i.e., without an <em>&#64;file</em> <a class="reference internal" href="#parameters">parameter</a>), <em>sqlcmd</em>
 prompts on standard input with a &quot;?&quot; and waits for commands to be entered,
 executing each one as it's entered.</p>
@@ -715,7 +719,7 @@ and do not require a semi-colon.</p>
 transcript, to whet your whistle:</p>
 <pre class="literal-block">
 $ sqlcmd mydb
-SQLCmd, version 0.1 ($Revision: 7828 $)
+SQLCmd, version 0.1 ($Revision: 7830 $)
 Copyright 2008 Brian M. Clapper.
 
 Type &quot;help&quot; or &quot;?&quot; for help.
@@ -905,8 +909,8 @@ Indexes:
 userpk1 Columns:     (id)
         Description: (PRIMARY) Unique, non-clustered btree index
 ----------------------------------------------------------------------------
-etuserak1 Columns:     (companyid, username)
-          Description: Unique, non-clustered btree index
+userak1 Columns:     (companyid, username)
+        Description: Unique, non-clustered btree index
 </pre>
 </div>
 <div class="section" id="history">
@@ -1042,8 +1046,63 @@ statements.</td>
 It's used to display the names of all tables in the database.</p>
 </div>
 </div>
+<div class="section" id="extended-commands">
+<h2><a class="toc-backref" href="#id34">Extended Commands</a></h2>
+<p>If you type a command that <em>sqlcmd</em> doesn't recognize as a SQL command or one
+of its internal commands, it passes the command straight through to the
+database and treats the command as it would treate a SQL <tt class="docutils literal"><span class="pre">SELECT</span></tt>. This
+policy allows you to use certain RDBMS-specific commands without <em>sqlcmd</em>
+having to support them explicitly. For instance, here's what happens if you've
+connected <em>sqlcmd</em> to a SQLite database and you try to use the SQLite
+<tt class="docutils literal"><span class="pre">EXPLAIN</span></tt> command:</p>
+<pre class="literal-block">
+? explain select distinct id from foo;
+Execution time: 0.000 seconds
+20 rows
+
+addr opcode        p1 p2 p3
+---- ------------- -- -- -----------------
+0    OpenEphemeral 1  0  keyinfo(1,BINARY)
+1    Goto          0  16
+2    Integer       0  0
+3    OpenRead      0  2
+4    SetNumColumns 0  1
+5    Rewind        0  14
+6    Column        0  0
+7    MakeRecord    -1 0
+8    Distinct      1  11
+9    Pop           2  0
+10   Goto          0  13
+11   IdxInsert     1  0
+12   Callback      1  0
+13   Next          0  6
+14   Close         0  0
+15   Halt          0  0
+16   Transaction   0  0
+17   VerifyCookie  0  1
+18   Goto          0  2
+19   Noop          0  0
+</pre>
+<p>Similarly, here's what happens when you run the <tt class="docutils literal"><span class="pre">ANALYZE</span></tt> command on a
+PostgreSQL database:</p>
+<pre class="literal-block">
+? analyze verbose;
+Execution time: 0.054 seconds
+0 rows
+</pre>
+<div class="section" id="restrictions">
+<h3><a class="toc-backref" href="#id35">Restrictions</a></h3>
+<ul class="simple">
+<li>Some extended commands don't work well through <em>sqlcmd</em>. Your mileage
+may vary.</li>
+<li>Since these extended commands are database-specific, they do not show
+up in command completion output, and they do not support command completion
+themselves.</li>
+</ul>
+</div>
+</div>
 <div class="section" id="command-history">
-<h2><a class="toc-backref" href="#id34">Command History</a></h2>
+<h2><a class="toc-backref" href="#id36">Command History</a></h2>
 <p><em>sqlcmd</em> supports a <a class="reference external" href="http://www.gnu.org/software/bash/manual/">bash</a>-like command history mechanism. Every command
 you type at the command prompt is saved in an internal memory buffer, accessible
 via the <tt class="docutils literal"><span class="pre">.history</span></tt> command.</p>
@@ -1076,7 +1135,7 @@ History files always end with &quot;.hist&quot;.</p>
 the history file for the second database is <tt class="docutils literal"><span class="pre">$HOME/.sqlcmd/customers.hist.</span></tt></p>
 </div>
 <div class="section" id="command-completion">
-<h2><a class="toc-backref" href="#id35">Command Completion</a></h2>
+<h2><a class="toc-backref" href="#id37">Command Completion</a></h2>
 <p><em>sqlcmd</em> supports TAB-completion in various places, in the manner of the GNU
 <a class="reference external" href="http://www.gnu.org/software/bash/manual/">bash</a> shell. TAB-completion is (mostly) context sensitive. For example:</p>
 <dl class="docutils">
@@ -1103,12 +1162,20 @@ table names; it is not currently sensitive to SQL syntax.</dd>
 <dd>Shows the commands in the history.</dd>
 <dt><tt class="docutils literal"><span class="pre">.history</span> <span class="pre">s&lt;TAB&gt;</span></tt></dt>
 <dd>Shows the names of all commands in the history beginning with &quot;s&quot;.</dd>
+<dt><tt class="docutils literal"><span class="pre">.load</span> <span class="pre">&lt;TAB&gt;</span></tt></dt>
+<dd>Lists all the files in the current directory</dd>
+<dt><tt class="docutils literal"><span class="pre">.load</span> <span class="pre">f&lt;TAB&gt;</span></tt></dt>
+<dd>Lists all the files in the current directory that start with &quot;s&quot;</dd>
+<dt><tt class="docutils literal"><span class="pre">.load</span> <span class="pre">~/&lt;TAB&gt;</span></tt></dt>
+<dd>Lists all the files in your home directory</dd>
+<dt><tt class="docutils literal"><span class="pre">.load</span> <span class="pre">~/d&lt;TAB&gt;</span></tt></dt>
+<dd>Lists all the files in your home directory that start with &quot;d&quot;</dd>
 </dl>
 <p>etc.</p>
 </div>
 </div>
 <div class="section" id="license-and-copyright">
-<h1><a class="toc-backref" href="#id36">License and Copyright</a></h1>
+<h1><a class="toc-backref" href="#id38">License and Copyright</a></h1>
 <p>Copyright © 2008 Brian M. Clapper</p>
 <p>This is free software, released under the following BSD-like license:</p>
 <p>Redistribution and use in source and binary forms, with or without
