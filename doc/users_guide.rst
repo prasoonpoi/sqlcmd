@@ -35,9 +35,9 @@ Some features at a glance
 - *sqlcmd* supports SQL, but also supports database metadata (getting a list
   of tables, querying the table's columns and their data types, listing the
   indexes and foreign keys for a table, etc.).
-- *sqlcmd* command has a ``.set`` command that displays and controls *sqlcmd* 
+- *sqlcmd* command has a ``.set`` command that displays and controls *sqlcmd*
   settings.
-- *sqlcmd* provides a standard interface that works the same no matter what 
+- *sqlcmd* provides a standard interface that works the same no matter what
   database you're using.
 - *sqlcmd* uses the enhanced database drivers in the `Grizzled API`_'s ``db``
   module. (Those drivers are, in turn, built on top of standard Python
@@ -86,7 +86,7 @@ Options
                                    complete explanation of this parameter.
 
     -l level, --loglevel=level     Enable log messages as level *n*, where *n*
-                                   is one of: ``debug``, ``info``, ``warning``, 
+                                   is one of: ``debug``, ``info``, ``warning``,
                                    ``critical``, ``error``.
 
     -L logfile, --logfile=logfile  Dump log messages to *logfile*, instead of
@@ -342,7 +342,7 @@ names:
 - ``cust001``: the actual database name, from the ``database`` option
 - ``cust``: a unique abbreviation of ``customers`` or ``cust001``
 
-    
+
 The ``driver.`` Sections
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -382,7 +382,7 @@ that driver:
     [driver.derby]
     class=mycode.db.DerbyDriver
     name=derby
-    
+
 With that section in the configuration file, you can now use the value ``derby``
 for the ``type`` parameter in any ``db.`` section.
 
@@ -526,7 +526,7 @@ statement to be echoed before it is run. To enable command echo, set the
 ``echo`` variable to ``true``::
 
     .set echo true
-    
+
 Comments
 ~~~~~~~~
 
@@ -537,7 +537,7 @@ Example of support syntax::
 
     -- This is a SQL comment.
     -- And so is this.
-    
+
 Example of *unsupported* syntax:
 
 .. code-block:: sql
@@ -567,7 +567,7 @@ Example of use:
     begin
     update foo set bar = 1;
     commit
-    
+
 For compatibility with SQL scripts, this command does not begin with a ".".
 
 See also:
@@ -676,7 +676,7 @@ returns to its interactive prompt. ``.load`` can be invoked in several ways::
     .load path
     @ path
     @path
-    
+
 All three commands do exactly the same thing.
 
 ``r`` or ``redo``
@@ -698,7 +698,7 @@ For example, consider this history::
        2: select * from foo;
        3: .desc foo;
        4: .desc foobar;
-       
+
 Here are various ``redo`` invocations::
 
     ? r 1  <--- re-runs command 1, ".show tables"
@@ -815,6 +815,47 @@ For example, consider this configuration file:
 The history file for the first database is ``$HOME/.sqlcmd/testdb.hist``, and
 the history file for the second database is ``$HOME/.sqlcmd/customers.hist.``
 
+
+Command Completion
+-------------------
+
+*sqlcmd* supports TAB-completion in various places, in the manner of the GNU
+`bash`_ shell. TAB-completion is (mostly) context sensitive. For example:
+
+``.<TAB>``
+    Displays a list of all the "." commands
+
+``.set <TAB>``
+    Displays the variables you can set.
+
+``.set v<TAB>``
+    Completes the variable name that starts with "v". If multiple variables
+    start with "v", then the common characters are completed, and a second
+    TAB will display all the matching variables.
+
+``.connect <TAB>``
+    shows all the database names and aliases in the config file
+
+``.connect a<TAB>``
+    Completes the database name or alias that starts with "a". If multiple
+    names start with "a", then the common characters are completed, and a second
+    TAB will display all the matching names.
+
+``select * from <TAB>``
+    Shows the tables in the current database. (So does ``select ``\ *<TAB>*,
+    actually.) This works for ``insert``, ``update``, ``delete``, ``drop``,
+    and ``.desc``, as well. The completion in SQL commands *only* completes
+    table names; it is not currently sensitive to SQL syntax.
+
+``.history <TAB>``
+    Shows the commands in the history.
+
+``.history s<TAB>``
+    Shows the names of all commands in the history beginning with "s".
+
+etc.
+
+
 License and Copyright
 =====================
 
@@ -847,4 +888,4 @@ NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
 DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
