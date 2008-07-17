@@ -1,6 +1,6 @@
 $Id$
 
-Version 0.1.2 (...)
+Version 0.1.2 (17 July, 2008)
 
 - Fixed parsing error with the "@" command.
 - Dot (".") commands now show up properly in help.
