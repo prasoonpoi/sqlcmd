@@ -241,6 +241,8 @@ class SQLCmdConfig(object):
         aliases = cfg.getlist(section, 'aliases', sep=',', optional=True)
         if aliases:
             aliases = [primary_name] + [a.strip() for a in aliases]
+        else:
+            aliases = []
 
         host = cfg.get(section, 'host', optional=True)
         port = cfg.get(section, 'port', optional=True)
@@ -280,8 +282,6 @@ class SQLCmdConfig(object):
                   'Alias "%s" is already in the configuration' % alias
 
         except KeyError:
-            pass
-
             try:
                 cfg = DBInstanceConfigItem(section,
                                            [alias],
