@@ -80,7 +80,7 @@ from enum import Enum
 __version__   = '0.1'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
-__url__       = 'http://www.clapper.org/software/python/paragrep/'
+__url__       = 'http://www.clapper.org/software/python/sqlcmd/'
 __copyright__ = '© 1989-2008 Brian M. Clapper'
 __license__   = 'BSD-style license'
 
