@@ -168,10 +168,10 @@ Connect to a PostgreSQL database named "mydb" on the current host, using user
 Configuration File
 ==================
 
-Specify the database connection parameters on the command line is both tedious
-and error prone, even with a good shell history mechanism. So, *sqlcmd*
-permits you to store your database connection information in a configuration
-file.
+Specifying the database connection parameters on the command line is both
+tedious and error prone, even with a good shell history mechanism. So,
+*sqlcmd* permits you to store your database connection information in a
+configuration file.
 
 A Brief Overview of the Configuration File
 ------------------------------------------
