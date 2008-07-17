@@ -8,7 +8,7 @@ User's Guide
 
 :Author: Brian M. Clapper
 :Contact: bmc@clapper.org
-:Date: $Date: 2008-06-01 22:59:33 -0400 (Sun, 01 Jun 2008) $
+:Date: $Date$
 :Web site: http://www.clapper.org/software/python/sqlcmd/
 :Copyright: Copyright © 2008 Brian M. Clapper
 
@@ -452,7 +452,7 @@ Before going into each specific type of command, here's a brief *sqlcmd*
 transcript, to whet your whistle::
 
     $ sqlcmd mydb
-    SQLCmd, version 0.1 ($Revision: 7794 $)
+    SQLCmd, version 0.1 ($Revision$)
     Copyright 2008 Brian M. Clapper.
 
     Type "help" or "?" for help.
