@@ -3,6 +3,19 @@ $Id$
 Version 0.1.2 (...)
 
 - Fixed parsing error with the "@" command.
+- Dot (".") commands now show up properly in help.
+- Added tab completion to various commands. For instance:
+  * ".<TAB>" shows the "." commands
+  * ".set <TAB>" shows the variables you can set
+  * ".set variable <TAB>" shows the legal values for the variable
+  * ".connect <TAB>" shows all the database aliases in the config file
+  * "select * from <TAB>" shows the tables in the current database.
+    (So does "select <TAB>", actually.) This works for all SQL commands.
+  * ".history <TAB>" shows the commands in the history.
+    ".history s<TAB>" shows the names of all commands in the history
+    beginning with "s"
+  etc.
+     
 
 ---------------------------------------------------------------------------
 Version 0.1.1 (17 July, 2008)

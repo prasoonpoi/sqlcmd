@@ -129,7 +129,8 @@ def main():
         if log:
             log.exception('Error')
         rc = 1
-        
+        raise
+
     return rc
 
 def traced(func):
@@ -228,7 +229,7 @@ class SQLCmdConfig(object):
                 if section.startswith('db.'):
                     # This is a database configuration.
                     self.__config_db(cfg, section)
-    
+
                 elif section.startswith('driver.'):
                     # Database driver configuration
                     self.__config_driver(cfg, section)
@@ -298,6 +299,11 @@ class SQLCmdConfig(object):
 
     def get(self, alias):
         return self.__config[alias]
+
+    def get_aliases(self):
+        aliases = self.__config.keys()
+        aliases.sort()
+        return aliases
 
     def find_match(self, alias):
         try:
@@ -429,7 +435,7 @@ class SQLCmd(Cmd):
     NO_SEMI_NEEDED.add('eof')
 
     VAR_TYPES = Enum('boolean', 'string', 'integer')
-
+    
     def __init__(self, cfg):
         Cmd.__init__(self)
         self.prompt = "? "
@@ -443,6 +449,7 @@ class SQLCmd(Cmd):
         self.__interactive = True
         self.__in_multiline_command = False
         self.save_history = True
+        self.identchars = Cmd.identchars + '.'
 
         def autocommitChanged(var):
             if var.value == True:
@@ -510,6 +517,8 @@ class SQLCmd(Cmd):
                     self.__db.rollback()
                 except db.Error:
                     pass
+        except:
+            raise
         return stop
 
     def set_database(self, database_alias):
@@ -550,11 +559,6 @@ class SQLCmd(Cmd):
             if len(first) > 1:
                 args = [first[1:]] + args
             first = SQLCmd.META_COMMAND_PREFIX + 'load'
-
-        elif first.startswith('!'):
-            first = 'r'
-            if len(first) > 1:
-                args = [first[1:]] + args
 
         need_semi = not first in SQLCmd.NO_SEMI_NEEDED;
         if first.startswith(SQLCmd.COMMENT_PREFIX):
@@ -607,20 +611,152 @@ class SQLCmd(Cmd):
 
         return s
 
+    def completenames(self, text, *ignored):
+        """
+        Get list of commands, for completion. This version just edits the
+        base class's results.
+        """
+        if text.startswith('.'):
+            text = 'dot_' + text[1:]
+
+        commands = Cmd.completenames(self, text, ignored)
+
+        result = []
+        for command in commands:
+            if command.startswith('dot_'):
+                result.append('.' + command[4:])
+            else:
+                result.append(command)
+
+        return result
+
+    def complete(self, text, state):
+        """
+        Return the next possible completion for 'text'.
+
+        If a command has not been entered, then complete against command list.
+        Otherwise try to call complete_<command> to get list of completions.
+        """
+        if state == 0:
+            import readline
+            origline = readline.get_line_buffer()
+            line = origline.lstrip()
+            stripped = len(origline) - len(line)
+            begidx = readline.get_begidx() - stripped
+            endidx = readline.get_endidx() - stripped
+            if begidx>0:
+                cmd, args, foo = self.parseline(line)
+                if cmd == '':
+                    compfunc = self.completedefault
+                else:
+                    if cmd.startswith('.'):
+                        s = 'dot'
+                        if len(cmd) > 1:
+                            s += '_%s' % cmd[1:]
+                        cmd = s
+
+                    try:
+                        compfunc = getattr(self, 'complete_' + cmd)
+                    except AttributeError:
+                        compfunc = self.completedefault
+            else:
+                compfunc = self.completenames
+
+            self.completion_matches = compfunc(text, line, begidx, endidx)
+        try:
+            return self.completion_matches[state]
+        except IndexError:
+            return None
+
+    def complete_dot(self, text, line, start_index, end_index):
+        return [n for n in self.completenames('') if n.startswith('.')]
+
+    def do_help(self, arg):
+        """
+        Swiped from the base class and modified.
+        """
+        if arg:
+            # XXX check arg syntax
+            if arg.startswith('.'):
+                arg = 'dot_' + arg[1:]
+
+            try:
+                func = getattr(self, 'help_' + arg)
+            except AttributeError:
+                try:
+                    doc=getattr(self, 'do_' + arg).__doc__
+                    if doc:
+                        self.stdout.write("%s\n"%str(doc))
+                        return
+                except AttributeError:
+                    pass
+                self.stdout.write("%s\n"%str(self.nohelp % (arg,)))
+                return
+            func()
+        else:
+            names = self.get_names()
+            cmds_doc = []
+            cmds_undoc = []
+            help = {}
+            for name in names:
+                if name[:5] == 'help_':
+                    help[name[5:]]=1
+            names.sort()
+            # There can be duplicates if routines overridden
+            prevname = ''
+            for name in names:
+                if name[:3] == 'do_':
+                    if name == prevname:
+                        continue
+                    prevname = name
+                    cmd=name[3:]
+                    if cmd.startswith('dot_'):
+                        cmd = '.' + cmd[4:]
+                    if cmd.lower() == 'eof':
+                        continue
+                    if cmd in help:
+                        cmds_doc.append(cmd)
+                        del help[cmd]
+                    elif getattr(self, name).__doc__:
+                        cmds_doc.append(cmd)
+                    else:
+                        cmds_undoc.append(cmd)
+            self.stdout.write("%s\n"%str(self.doc_leader))
+            self.print_topics(self.doc_header,   cmds_doc,   15,80)
+            self.print_topics(self.misc_header,  help.keys(),15,80)
+            self.print_topics(self.undoc_header, cmds_undoc, 15,80)
+
+    def do_redo(self, args):
+        """
+        Re-run a command.
+
+        Usage: r [num|string]
+               redo [num|string]
+
+        where 'num' is the number of the command to re-run, as shown in the
+        'history' display. 'string' is a substring to match against the
+        command history; for instance, 'r select' attempts to run the
+        last command starting with 'select'. If called with no arguments,
+        just re-run the last command.
+        """
+        do_r(args)
+
     def do_r(self, args):
         """
         Re-run a command.
 
         Usage: r [num]
-               ![num]
+               redo [num]
 
         where 'num' is the number of the command to re-run, as shown in the
-        'history' display. If 'num' is omitted, re-run the most previously
-        run command.
+        'history' display. 'string' is a substring to match against the
+        command history; for instance, 'r select' attempts to run the
+        last command starting with 'select'. If called with no arguments,
+        just re-run the last command.
         """
         a = args.split()
         if len(a) > 1:
-            raise BadCommandError, 'Too many parameters to "r" command.'
+            raise BadCommandError, 'Too many parameters'
 
         if len(a) == 0:
             # Redo last command.
@@ -644,6 +780,24 @@ class SQLCmd(Cmd):
             self.cmdqueue += [line]
             self.__set_variable('echo', echo)
 
+    def complete_r(self, text, line, start_index, end_index):
+        h = self.__history.get_history_list()
+        h.reverse()
+        matches = set()
+        i = 0
+        for command in h:
+            i+=1
+            if len(command.strip()) == 0:
+                continue
+
+            tokens = command.split()
+            if len(text) == 0:
+                matches.add(tokens[0])
+            elif tokens[0].startswith(text):
+                matches.add(tokens[0])
+
+        return list(matches)
+
     def do_select(self, args):
         """
         Run a SQL 'SELECT' statement.
@@ -657,11 +811,17 @@ class SQLCmd(Cmd):
         if self.__flag_is_set('autocommit'):
             self.__db.commit()
 
+    def complete_select(self, text, line, start_index, end_index):
+        return self.__complete_tables(text)
+
     def do_insert(self, args):
         """
         Run a SQL 'INSERT' statement.
         """
         self.__handle_update('insert', args)
+
+    def complete_insert(self, text, line, start_index, end_index):
+        return self.__complete_tables(text)
 
     def do_update(self, args):
         """
@@ -669,11 +829,17 @@ class SQLCmd(Cmd):
         """
         self.__handle_update('update', args)
 
+    def complete_update(self, text, line, start_index, end_index):
+        return self.__complete_tables(text)
+
     def do_delete(self, args):
         """
         Run a SQL 'DELETE' statement.
         """
         self.__handle_update('delete', args)
+
+    def complete_delete(self, text, line, start_index, end_index):
+        return self.__complete_tables(text)
 
     def do_create(self, args):
         """
@@ -681,11 +847,17 @@ class SQLCmd(Cmd):
         """
         self.__handle_update('create', args)
 
+    def complete_create(self, text, line, start_index, end_index):
+        return self.__complete_tables(text)
+
     def do_drop(self, args):
         """
         Run a SQL 'DROP' statement (e.g., 'DROP TABLE', 'DROP INDEX')
         """
         self.__handle_update('drop', args)
+
+    def complete_drop(self, text, line, start_index, end_index):
+        return self.__complete_tables(text)
 
     def do_begin(self, args):
         """
@@ -773,6 +945,54 @@ class SQLCmd(Cmd):
         except ValueError:
                 raise BadCommandError, 'Bad argument to "set %s"' % varname
 
+    def complete_dot_set(self, text, line, start_index, end_index):
+        tokens = line.split()
+        total_tokens = len(tokens)
+        if (total_tokens == 1) or ((total_tokens == 2) and (line[-1] != ' ')):
+            # .set _
+            # or
+            # .set v_
+            #
+            # Complete the things that can be set
+
+            names = self.__VARS.keys()
+            names.sort()
+            if len(text) == 0:
+                matches = names
+            else:
+                matches = [name for name in names if name.startswith(text)]
+
+        elif (total_tokens == 2) or (total_tokens == 3):
+            # .set variable _
+            #
+            # or
+            #
+            # .set variable v_
+            #
+            # So, complete the legal values.
+
+            varname = tokens[1]
+            try:
+                var = self.__VARS[varname]
+                if var.type == SQLCmd.VAR_TYPES.boolean:
+                    matches = ['true', 'false']
+
+                elif var.type == SQLCmd.VAR_TYPES.integer:
+                    sys.stdout.write('\nEnter a number\n%s' % line)
+                    sys.stdout.flush()
+
+                elif var.type == SQLCmd.VAR_TYPES.string:
+                    sys.stdout.write('\nEnter a string\n%s' % line)
+                    sys.stdout.flush()
+
+                if len(tokens) == 3:
+                    matches = [m for m in matches if m.startswith(tokens[2])]
+            except KeyError:
+                matches = []
+
+        return matches
+
+
     def do_dot_h(self, args):
         """
         Show the current command history. Identical to the 'hist' and
@@ -802,28 +1022,31 @@ class SQLCmd(Cmd):
 
     def do_dot_show(self, args):
         """
-        Run the "show" command.
+        Run the ".show" command. General form:
+
+            .show arg
+
+        'arg' can be:
+
+        - "tables" to show the list of tables in the database
         """
-        self.__ensure_connected()
-        cursor = self.__db.cursor()
+        if args.lower() == 'tables':
+            self.__echo('.show', args, add_semi=False)
+            for table in self.__get_tables():
+                print table
 
-        try:
-            if args.lower() == 'tables':
-                self.__echo('.show', args, add_semi=False)
-                tables = cursor.get_tables()
-                tables.sort()
-                for table in tables:
-                    print table
+        else:
+            raise BadCommandError, \
+                  'Unknown argument(s) to command ".show": %s' % args
 
-            else:
-                raise BadCommandError, \
-                      'Unknown argument(s) to command ".show": %s' % args
+    def complete_dot_show(self, text, line, start_index, end_index):
+        matches = []
+        if len(text) == 0:
+            matches = ['tables']
+        elif 'tables'.startswith(text):
+            matches = ['tables']
 
-        finally:
-            cursor.close()
-
-        if self.__flag_is_set('autocommit'):
-            self.__db.commit()
+        return matches
 
     def do_dot_desc(self, args):
         """
@@ -854,6 +1077,12 @@ class SQLCmd(Cmd):
         finally:
             cursor.close()
 
+    def complete_dot_desc(self, text, line, start_index, end_index):
+        return complete_dot_describe(text, line, start_index, end_index)
+
+    def complete_dot_describe(self, text, line, start_index, end_index):
+        return self.__complete_tables(text)
+
     def do_dot_load(self, args):
         """
         Load and run a file full of commands without exiting the command
@@ -877,7 +1106,7 @@ class SQLCmd(Cmd):
         Close the current database connection, and connect to another
         database.
 
-        Usage: connect database_alias
+        Usage: .connect database_alias
 
         where 'database_alias' is a valid database alias from the .sqlcmd
         startup file.
@@ -898,6 +1127,13 @@ class SQLCmd(Cmd):
             assert(self.__db_config != None)
             self.__connect_to(self.__db_config)
 
+    def complete_dot_connect(self, text, line, start_index, end_index):
+        aliases = self.__config.get_aliases()
+        if len(text.strip()) > 0:
+            aliases = [a for a in aliases if a.startswith(text)]
+
+        return aliases        
+
     def help_variables(self):
         print """
         There are various variables that control the behavior of sqlcmd.
@@ -905,7 +1141,7 @@ class SQLCmd(Cmd):
         that way, SQL scripts that set sqlcmd variables can still be used
         with other SQL interpreters without causing problems.
 
-        Usage: --set var value
+        Usage: .set var value
 
         Boolean variables can take the values 'on', 'off', 'true', 'false',
         'yes', 'no', '0' or '1'.
@@ -952,6 +1188,26 @@ class SQLCmd(Cmd):
 
     def emptyline(self):
         pass
+
+    def __complete_tables(self, text):
+        tables = self.__get_tables()
+        if len(text.strip()) > 0:
+            tables = [t for t in tables if t.startswith(text)]
+
+        return tables
+
+    def __get_tables(self):
+        self.__ensure_connected()
+        cursor = self.__db.cursor()
+
+        try:
+            tables = cursor.get_tables()
+            tables.sort()
+            return tables
+
+        finally:
+            cursor.close()
+
 
     def __show_vars(self):
         width = 0

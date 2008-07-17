@@ -679,6 +679,32 @@ returns to its interactive prompt. ``.load`` can be invoked in several ways::
     
 All three commands do exactly the same thing.
 
+``r`` or ``redo``
+~~~~~~~~~~~~~~~~~
+
+Re-issue a command from the history. General usage::
+
+    r [num|str]
+    redo [num|str]
+
+If *num* is present, it is the number of the command to re-run. If *str*
+is specified, the most recent command that *str* (using a substring match)
+is re-run.
+
+For example, consider this history::
+
+    ? .history
+       1: .show tables;
+       2: select * from foo;
+       3: .desc foo;
+       4: .desc foobar;
+       
+Here are various ``redo`` invocations::
+
+    ? r 1  <--- re-runs command 1, ".show tables"
+    ? r s  <--- re-runs the most recent command that starts with "s", which is "select * from foo"
+    ? r    <--- re-runs the last command, ".desc foobar"
+
 ``rollback``
 ~~~~~~~~~~~~
 

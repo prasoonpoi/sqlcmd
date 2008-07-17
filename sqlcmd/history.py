@@ -16,6 +16,8 @@ $Id$
 import re
 import sys
 import logging
+import copy
+
 from grizzled.decorators import abstract
 
 # ---------------------------------------------------------------------------
@@ -145,6 +147,13 @@ class History(object):
     def clear_history(self):
         pass
 
+    def get_history_list(self):
+        result = []
+        for i in range(1, self.total + 1):
+            result += [self.get_item(i)]
+
+        return result
+
     def remove_matches(self, regexp_string):
         pat = re.compile(regexp_string)
         buf = []
@@ -265,6 +274,9 @@ class SimpleHistory(History):
             return self.__buf[index]
         except IndexError:
             return None
+
+    def get_history_list(self):
+        return copy.deepcopy(self.__buf)
 
     def get_total(self):
         return len(self.__buf)
