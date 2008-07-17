@@ -129,7 +129,6 @@ def main():
         if log:
             log.exception('Error')
         rc = 1
-        raise
 
     return rc
 
