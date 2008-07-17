@@ -1,5 +1,11 @@
 $Id$
 
+Version 0.1.1 (17 July, 2008)
+
+- No longer craps out if $HOME/.sqlcmd/config is missing, but -d (--db)
+  is on the command line.
+
+---------------------------------------------------------------------------
 Version 0.1 (16 July, 2008)
 
 - First version posted to the web.

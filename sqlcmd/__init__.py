@@ -115,14 +115,21 @@ HISTORY_FILE_FORMAT = os.path.join(DEFAULT_CONFIG_DIR, '%s.hist')
 # Globals
 # ---------------------------------------------------------------------------
 
-log = None
+log = logging.getLogger('sqlcmd')
 
 # ---------------------------------------------------------------------------
 # Functions
 # ---------------------------------------------------------------------------
 
 def main():
-    Main().run(sys.argv)
+    try:
+        Main().run(sys.argv)
+        rc = 0
+    except:
+        log.exception('Error')
+        rc = 1
+        
+    return rc
 
 def traced(func):
     def wrapper(*__args,**__kw):
@@ -212,17 +219,18 @@ class SQLCmdConfig(object):
         return len(self.__config.keys())
 
     def load_file(self, file):
-        cfg = Configuration()
-        cfg.read(file)
+        if os.access(file, os.R_OK|os.F_OK):
+            cfg = Configuration()
+            cfg.read(file)
 
-        for section in cfg.sections:
-            if section.startswith('db.'):
-                # This is a database configuration.
-                self.__config_db(cfg, section)
-
-            elif section.startswith('driver.'):
-                # Database driver configuration
-                self.__config_driver(cfg, section)
+            for section in cfg.sections:
+                if section.startswith('db.'):
+                    # This is a database configuration.
+                    self.__config_db(cfg, section)
+    
+                elif section.startswith('driver.'):
+                    # Database driver configuration
+                    self.__config_driver(cfg, section)
 
     def __config_db(self, cfg, section):
         primary_name = section[3:] # assumes it starts with 'db.'
@@ -1407,8 +1415,6 @@ class Main(object):
 
     def __init_logging(self, level, file):
         """Initialize logging subsystem"""
-        global log
-        log = logging.getLogger('sqlcmd')
         if file == None:
             hdlr = logging.StreamHandler(sys.stdout)
         else:
@@ -1424,5 +1430,4 @@ class Main(object):
 
 
 if __name__ == '__main__':
-    main()
-    sys.exit(0)
+    sys.exit(main())
