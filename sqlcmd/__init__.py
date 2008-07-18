@@ -131,6 +131,9 @@ def main():
     except KeyboardInterrupt:
         pass
 
+    except SystemExit:
+        pass
+
     except:
         rc = 1
         if log:

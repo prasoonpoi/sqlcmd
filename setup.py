@@ -30,7 +30,7 @@ info = loadInfo()
 
 setup (name          = 'sqlcmd',
        version       = info['__version__'],
-       description   = 'Command shell for issuing SQL',
+       description   = 'A cross-platform, cross-database SQL command line tool',
        packages      = find_packages(),
        url           = info['__url__'],
        license       = info['__license__'],

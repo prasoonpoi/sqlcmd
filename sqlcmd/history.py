@@ -38,10 +38,18 @@ DEFAULT_MAXLENGTH = 512
 
 log = logging.getLogger('history')
 _have_readline = False
+_have_pyreadline = False
 
 try:
     import readline
     _have_readline = True
+    
+    # Is it pyreadline? If so, it's not quite the same.
+    
+    try:
+        _have_pyreadline = readline.rl.__module__.startswith('pyreadline.')
+    except AttributeError:
+        pass
 except ImportError:
     pass
 
@@ -64,11 +72,18 @@ def get_history(using_raw_input=True, verbose=True):
                     object
     """
     global _have_readline
+    global _have_pyreadline
     result = None
-    if _have_readline:
+    if _have_pyreadline:
+        if verbose:
+            print 'Using pyreadline for history management.'
+        result = PyReadlineHistory(using_raw_input)
+
+    elif _have_readline:
         if verbose:
             print 'Using readline for history management.'
         result = ReadlineHistory(using_raw_input)
+
     else:
         if verbose:
             print 'Using simple history package for history management.'
@@ -266,6 +281,51 @@ class ReadlineHistory(History):
         return self.__usingRaw
 
 
+class PyReadlineHistory(ReadlineHistory):
+    def __init__(self, using_raw_input=True):
+        global _have_pyreadline
+        assert(_have_pyreadline)
+        ReadlineHistory.__init__(self, using_raw_input)
+
+    def get_item(self, index):
+        return self.__get_buf()[index - 1].get_line_text()
+
+    def get_total(self):
+        return len(self.__get_buf())
+
+    def set_completer_delims(self, s):
+        readline.set_completer_delims(s)
+    
+    def get_completer_delims(self):
+        return readline.get_completer_delims()
+
+    def remove_item(self, index):
+        buf = copy.deepcopy(self.__get_buf())
+        self.clear_history()
+        for s in buf:
+            readline.add_history(s)
+
+    def clear_history(self):
+        readline.clear_history()
+
+    def get_max_length(self):
+        return readline.get_history_length()
+
+    def set_max_length(self, n):
+        readline.set_history_length(n)
+
+    def add_item(self, line, force=False):
+        if force or (not self.use_raw_input()):
+            # Kludge. pyreadline is a pain in the ass.
+            from pyreadline import lineobj
+            from pyreadline.unicode_helper import ensure_unicode
+
+            line = ensure_unicode(line.rstrip())
+            readline.add_history(lineobj.ReadLineTextBuffer(line))
+
+    def __get_buf(self):
+        return readline.rl._history.history
+
 class SimpleHistory(History):
 
     def __init__(self):
@@ -310,6 +370,10 @@ class SimpleHistory(History):
 
     def use_raw_input(self):
         return False
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     h = getHistory()

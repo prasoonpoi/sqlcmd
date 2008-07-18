@@ -1,11 +1,14 @@
 $Id$
 ---------------------------------------------------------------------------
 
-Version 0.2.1 (...)
+Version 0.2.1 (18 July, 2008)
 
+- Now supports the ipython pyreadline module on Windows, allowing sqlcmd
+  to work on Windows properly.
 - Explicit support for ALTER statement, to permit table completion.
 
 ---------------------------------------------------------------------------
+>>>>>>> .r7845
 Version 0.2 (17 July, 2008)
 
 - "@" is no longer an alias for ".load". It's too complicated to support.

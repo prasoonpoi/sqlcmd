@@ -61,9 +61,13 @@ Prerequisites
 - Python_ 2.5 or better
 - The `Grizzled API`_ (automatically installed if you use ``easy_install``
   to install *sqlcmd*)
+- The `enum`_ package (automatically installed if you use ``easy_install``)
 - Appropriate Python DB API drivers for the database(s) you want to use.
   (See `Database Types`_, below.)
+- **Windows only**: You'll also want the *ipython* ``pyreadline`` package,
+  available via ``easy_install`` or from http://ipython.scipy.org/dist
 
+.. _enum: http://pypi.python.org/pypi/enum/0.4.3
 
 Usage
 =====

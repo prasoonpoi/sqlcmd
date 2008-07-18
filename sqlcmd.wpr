@@ -16,7 +16,7 @@ debug.err-values = {None: {}}
 guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
                             'windows': [{'name': '3DgIXgv2hehKSHb9uE8x0HCzRM'\
         '03CyRo',
-        'size-state': 'maximized',
+        'size-state': '',
         'type': 'dock',
         'view': {'area': 'tall',
                  'current_pages': [0,
@@ -42,9 +42,14 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
                                {'tree-state': {'file-sort-method': 'by name',
         'list-files-first': 0,
         'tree-states': {'deep': {'column-widths': [1.0],
+<<<<<<< .mine
+                                 'expanded-nodes': [],
+                                 'selected-nodes': [(12,)],
+=======
                                  'expanded-nodes': [(3,)],
                                  'selected-nodes': [(3,
         1)],
+>>>>>>> .r7845
                                  'top-node': (0,)}},
         'tree-style': 'deep'}}),
                               ('interactive-search',
@@ -196,6 +201,9 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
                       None)],
         'primary_view_state': {'editor_states': ('horizontal',
         0.5,
+<<<<<<< .mine
+        {'bookmarks': ([(loc('CHANGELOG'),
+=======
         {'bookmarks': ([(loc('CHANGELOG'),
                          {'attrib-starts': [],
                           'first-line': 0,
@@ -278,6 +286,10 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
                           'selection_start': 4727},
                          1216332567.7922449),
                         (loc('sqlcmd/__init__.py'),
+>>>>>>> .r7845
+<<<<<<< .mine
+                         {'attrib-starts': [],
+=======
                          {'attrib-starts': [('main',
         124)],
                           'first-line': 133,
@@ -289,6 +301,7 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
                          1216334063.972578),
                         (loc('CHANGELOG'),
                          {'attrib-starts': [],
+>>>>>>> .r7845
                           'first-line': 0,
                           'folded-linenos': [],
                           'sel-line': 7,
@@ -394,11 +407,69 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
                          {'attrib-starts': [],
                           'first-line': 0,
                           'folded-linenos': [],
+<<<<<<< .mine
+                          'sel-line': 852,
+                          'sel-line-start': 31461,
+                          'selection_end': 31470,
+                          'selection_start': 31470},
+                         1216322951.009104),
+                        (loc('doc/users_guide.rst'),
+                         {'attrib-starts': [],
+                          'first-line': 258,
+                          'folded-linenos': [],
+                          'sel-line': 314,
+                          'sel-line-start': 13653,
+                          'selection_end': 13682,
+                          'selection_start': 13676},
+                         1216322965.826247),
+                        (loc('doc/users_guide.rst'),
+                         {'attrib-starts': [],
+                          'first-line': 258,
+                          'folded-linenos': [],
+                          'sel-line': 314,
+                          'sel-line-start': 13653,
+                          'selection_end': 13699,
+                          'selection_start': 13692},
+                         1216326612.4863939),
+                        (loc('doc/users_guide.rst'),
+                         {'attrib-starts': [],
+                          'first-line': 50,
+                          'sel-line': 55,
+                          'sel-line-start': 2218,
+                          'selection_end': 2223,
+                          'selection_start': 2218},
+                         1216326627.1504951),
+                        (loc('doc/users_guide.rst'),
+                         {'attrib-starts': [],
+                          'first-line': 50,
+                          'sel-line': 63,
+                          'sel-line-start': 2403,
+                          'selection_end': 2478,
+                          'selection_start': 2478},
+                         1216380630.8853829),
+                        (loc('setup.py'),
+                         {'attrib-starts': [],
+                          'first-line': 0,
+                          'sel-line': 0,
+                          'sel-line-start': 0,
+                          'selection_end': 0,
+                          'selection_start': 0},
+                         1216380655.5485411),
+                        [loc('doc/users_guide.rst'),
+                         {'attrib-starts': [],
+                          'first-line': 50,
+                          'sel-line': 63,
+                          'sel-line-start': 2403,
+                          'selection_end': 2478,
+                          'selection_start': 2478},
+                         1216380663.5205779]],
+=======
                           'sel-line': 10,
                           'sel-line-start': 450,
                           'selection_end': 450,
                           'selection_start': 450},
                          1216338497.8368299]],
+>>>>>>> .r7845
                        19),
          'current-loc': loc('CHANGELOG'),
          'editor-states': {loc('../../../../.sqlcmd/config'): {},
@@ -442,12 +513,20 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
         'selection_end': 503,
         'selection_start': 503},
                            loc('doc/users_guide.rst'): {'attrib-starts': [],
+<<<<<<< .mine
+        'first-line': 50,
+        'sel-line': 67,
+        'sel-line-start': 2587,
+        'selection_end': 2635,
+        'selection_start': 2635},
+=======
         'first-line': 823,
         'folded-linenos': [],
         'sel-line': 877,
         'sel-line-start': 32972,
         'selection_end': 32985,
         'selection_start': 32985},
+>>>>>>> .r7845
                            loc('setup.py'): {'attrib-starts': [],
         'first-line': 0,
         'sel-line': 0,
@@ -468,6 +547,10 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
         'sel-line': 26,
         'sel-line-start': 790,
         'selection_end': 817,
+<<<<<<< .mine
+        'selection_start': 817}},
+         'has-focus': True},
+=======
         'selection_start': 817},
                            loc('../../../../../../usr/lib/python2.5/cmd.py'): {''\
         'attrib-starts': [('Cmd',
@@ -481,7 +564,15 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
         'selection_end': 12091,
         'selection_start': 12091}},
          'has-focus': False},
+>>>>>>> .r7845
         {'bookmarks': ([(loc('sqlcmd/__init__.py'),
+<<<<<<< .mine
+                         {'attrib-starts': [('SQLCmd',
+        412),
+        ('SQLCmd.do_help',
+         626)],
+                          'first-line': 632,
+=======
                          {'attrib-starts': [('Main',
         1619),
         ('Main.__init_logging',
@@ -509,6 +600,7 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
         ('SQLCmd.set_database',
          560)],
                           'first-line': 510,
+>>>>>>> .r7845
                           'folded-linenos': [],
                           'sel-line': 566,
                           'sel-line-start': 18117,
@@ -701,11 +793,45 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
         433)],
                           'first-line': 402,
                           'folded-linenos': [],
+<<<<<<< .mine
+                          'sel-line': 70,
+                          'sel-line-start': 2479,
+                          'selection_end': 2543,
+                          'selection_start': 2543},
+                         1216321352.6121409),
+                        (loc('../grizzled/grizzled/db/__init__.py'),
+                         {'attrib-starts': [],
+                          'first-line': 8,
+                          'sel-line': 23,
+                          'sel-line-start': 613,
+                          'selection_end': 623,
+                          'selection_start': 621},
+                         1216326550.5759201),
+                        (loc('../grizzled/grizzled/db/__init__.py'),
+                         {'attrib-starts': [('Cursor',
+        205)],
+                          'first-line': 170,
+                          'sel-line': 215,
+                          'sel-line-start': 6865,
+                          'selection_end': 6925,
+                          'selection_start': 6922},
+                         1216380619.998472),
+                        [loc('../grizzled/grizzled/db/__init__.py'),
+                         {'attrib-starts': [('Cursor',
+        205)],
+                          'first-line': 170,
+                          'sel-line': 215,
+                          'sel-line-start': 6865,
+                          'selection_end': 6925,
+                          'selection_start': 6922},
+                         1216380622.5464721]],
+=======
                           'sel-line': 433,
                           'sel-line-start': 13673,
                           'selection_end': 13685,
                           'selection_start': 13679},
                          1216339628.6849401]],
+>>>>>>> .r7845
                        19),
          'current-loc': loc('sqlcmd/__init__.py'),
          'editor-states': {loc('../../../../.sqlcmd/config'): {'attrib-start'\
@@ -716,9 +842,20 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                           loc('../grizzled/grizzled/db/__init__.py'): {'att'\
+        'rib-starts': [('Cursor',
+                        205)],
+        'first-line': 170,
+        'sel-line': 215,
+        'sel-line-start': 6865,
+        'selection_end': 6865,
+        'selection_start': 6865},
+=======
                            loc('../../../invitemedia/dev-trunk/invitemedia/deployment/scripts/common.py'): {},
                            loc('../../../invitemedia/dev-trunk/invitemedia/install/makeami.py'): {},
                            loc('../../../invitemedia/dev-trunk/invitemedia/library/log/__init__.py'): {},
+>>>>>>> .r7845
                            loc('CHANGELOG'): {},
                            loc('doc/style.css'): {},
                            loc('doc/users_guide.rst'): {'attrib-starts': [],
@@ -750,6 +887,13 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
          109)],
         'first-line': 254,
         'folded-linenos': [],
+<<<<<<< .mine
+        'sel-line': 153,
+        'sel-line-start': 4218,
+        'selection_end': 4218,
+        'selection_start': 4218}},
+         'has-focus': False}),
+=======
         'sel-line': 109,
         'sel-line-start': 3313,
         'selection_end': 3348,
@@ -763,7 +907,10 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
         'selection_end': 0,
         'selection_start': 0}},
          'has-focus': True}),
+>>>>>>> .r7845
                                'open_files': [u'../../../../.sqlcmd/config',
+<<<<<<< .mine
+=======
         u'../../../invitemedia/dev-trunk/invitemedia/deployment/scripts/common.py',
         u'../../../invitemedia/dev-trunk/invitemedia/install/makeami.py',
         u'../../../invitemedia/dev-trunk/invitemedia/library/log/__init__.py',
@@ -773,7 +920,18 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
         u'setup.py',
         u'sqlcmd/history.py',
         u'../../../../../../usr/lib/python2.5/cmd.py',
+>>>>>>> .r7845
+<<<<<<< .mine
+        u'CHANGELOG',
+        u'doc/style.css',
+        u'sqlcmd/__init__.py',
+        u'sqlcmd/history.py',
+        u'../grizzled/grizzled/db/__init__.py',
+        u'setup.py',
+        u'doc/users_guide.rst']},
+=======
         u'sqlcmd/__init__.py']},
+>>>>>>> .r7845
         'split_percents': {0: 0.50274725274725274},
         'splits': 2,
         'tab_location': 'top',
@@ -783,9 +941,9 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
                  'tab_location': 'left',
                  'user_data': {}},
         'window-alloc': (0,
-                         25,
-                         1660,
-                         945)},
+                         22,
+                         1680,
+                         966)},
         {'name': 'nz8sdCZFY1fM2ZHHgdqsqa9sPhFohhIY',
          'size-state': '',
          'type': 'panel-tall',
@@ -797,7 +955,6 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
                                 1,
                                 {'attrib-starts': [],
                                  'first-line': 0,
-                                 'folded-linenos': [],
                                  'history': {},
                                  'sel-line': 0,
                                  'sel-line-start': 0,
@@ -811,6 +968,13 @@ guimgr.overall-gui-state = {'windowing-policy': 'combined-window',
                           378,
                           1102,
                           116)}]}
+<<<<<<< .mine
+guimgr.recent-documents = [loc('doc/users_guide.rst'),
+                           loc('setup.py'),
+                           loc('../grizzled/grizzled/db/__init__.py'),
+                           loc('sqlcmd/history.py')]
+guimgr.visual-state = {loc('doc/users_guide.rst'): {'attrib-starts': [],
+=======
 guimgr.recent-documents = [loc('CHANGELOG'),
                            loc('sqlcmd/__init__.py')]
 guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
@@ -825,10 +989,16 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'selection_end': 17770,
         'selection_start': 17770},
                        loc('doc/users_guide.rst'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
+<<<<<<< .mine
+        'sel-line': 52,
+        'sel-line-start': 2078,
+=======
         'folded-linenos': [],
         'sel-line': 52,
         'sel-line-start': 2076,
+>>>>>>> .r7845
         'selection_end': 2087,
         'selection_start': 2087},
                        loc('setup.py'): {'attrib-starts': [],
@@ -858,14 +1028,22 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #58'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #254'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #57'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #255'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
@@ -873,37 +1051,56 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #82'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #258'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
+        'folded-linenos': [],
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #85'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #257'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
-        'folded-linenos': [],
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #73'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #253'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
-        'folded-linenos': [],
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #74'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #256'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #84'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #259'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
@@ -911,7 +1108,11 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #72'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #250'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
@@ -919,22 +1120,33 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #64'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #251'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
-        'folded-linenos': [],
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #65'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #248'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #76'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #249'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
@@ -942,14 +1154,22 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #78'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #252'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #71'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #237'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
@@ -957,7 +1177,11 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #66'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #235'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
@@ -965,7 +1189,11 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #83'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #233'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'history': {},
         'sel-line': 0,
@@ -980,29 +1208,45 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #62'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #238'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
+        'folded-linenos': [],
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #81'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #243'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #59'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #236'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
-        'folded-linenos': [],
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #79'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #240'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
@@ -1010,7 +1254,11 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #60'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #246'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
@@ -1018,7 +1266,11 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #61'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #230'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
@@ -1026,7 +1278,11 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #80'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #245'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
@@ -1034,7 +1290,11 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #75'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #244'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'history': {},
         'sel-line': 0,
@@ -1049,21 +1309,33 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #77'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #247'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #70'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #242'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #67'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #241'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
@@ -1071,7 +1343,11 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #69'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #231'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
@@ -1079,14 +1355,30 @@ guimgr.visual-state = {loc('../grizzled/grizzled/db/__init__.py'): {'attrib-'\
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #63'): {'attrib-starts': [],
+=======
                        loc('unknown:<untitled> #234'): {'attrib-starts': [],
+>>>>>>> .r7845
+        'first-line': 0,
+        'folded-linenos': [],
+        'history': {},
+        'sel-line': 0,
+        'sel-line-start': 0,
+        'selection_end': 0,
+        'selection_start': 0},
+<<<<<<< .mine
+                       loc('unknown:<untitled> #68'): {'attrib-starts': [],
+=======
+                       loc('unknown:<untitled> #229'): {'attrib-starts': [],
+>>>>>>> .r7845
         'first-line': 0,
         'history': {},
         'sel-line': 0,
         'sel-line-start': 0,
         'selection_end': 0,
         'selection_start': 0},
-                       loc('unknown:<untitled> #229'): {'attrib-starts': [],
+                       loc('unknown:<untitled> #86'): {'attrib-starts': [],
         'first-line': 0,
         'folded-linenos': [],
         'history': {},
