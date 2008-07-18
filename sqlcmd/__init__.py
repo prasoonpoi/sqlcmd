@@ -1087,7 +1087,7 @@ class SQLCmd(Cmd):
             raise BadCommandError, 'Too many arguments to ".load"'
 
         try:
-            self.__load_file(tokens[0])
+            self.__load_file(os.path.expanduser(tokens[0]))
         except IOError, (ex, msg):
             log.error('Unable to load file "%s": %s' % (tokens[0], msg))
 
