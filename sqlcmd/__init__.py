@@ -51,6 +51,8 @@ $Id$
 # Imports
 # ---------------------------------------------------------------------------
 
+from __future__ import with_statement
+
 from cmd import Cmd
 import sys
 import os.path
@@ -555,23 +557,12 @@ class SQLCmd(Cmd):
         if len(tokens) == 1:
             first = s
             args = []
-
         else:
             first = tokens[0]
             args = tokens[1:]
 
         if not self.__in_multiline_command:
             first = first.lower()
-
-        # Done here to simulate what raw inputter does. (That is, if
-        # the raw inputter is in use and readline is available, the
-        # item will already be in the history by the time the handler
-        # is called.)
-        self.__history.add_item(s)
-
-        # Now, scrub non-structured comments from the history.
-
-        self.__scrub_history()
 
         need_semi = not first in SQLCmd.NO_SEMI_NEEDED;
         if first.startswith(SQLCmd.COMMENT_PREFIX):
@@ -588,7 +579,6 @@ class SQLCmd(Cmd):
             need_semi = False
 
         elif s == "EOF":
-            skip_history = True
             need_semi = False
 
         else:
@@ -612,7 +602,7 @@ class SQLCmd(Cmd):
             if self.__partial_command != None:
                 s = self.__partial_command + ' ' + s
                 self.__partial_command = None
-                self.__history.cut_back_to(self.__partial_cmd_history_start)
+                self.__history.cut_back_to(self.__partial_cmd_history_start + 1)
                 self.__partial_cmd_history_start = None
                 self.__history.add_item(s, force=True)
 
@@ -1247,7 +1237,6 @@ class SQLCmd(Cmd):
         finally:
             cursor.close()
 
-
     def __show_vars(self):
         width = 0
         for name in self.__VARS.keys():
@@ -1517,7 +1506,6 @@ class SQLCmd(Cmd):
     def __init_history(self):
         self.__history = history.get_history()
         self.__history.max_length = SQLCmd.DEFAULT_HISTORY_MAX
-        self.use_rawinput = self.__history.use_raw_input()
 
         completer_delims = self.__history.get_completer_delims()
         new_delims = ''
@@ -1558,20 +1546,12 @@ class SQLCmd(Cmd):
     def __show_history(self):
         self.__history.show()
 
-    def __scrub_history(self):
-        self.__history.remove_matches('^' + SQLCmd.COMMENT_PREFIX + r'\s')
-
     def __load_file(self, file):
-        f = None
-        try:
-            f = open(file)
+        with open(file) as f:
             for line in f.readlines():
                 if line[-1] == '\n':
                     line = line[:-1] # chop \n
                 self.cmdqueue += [line]
-        finally:
-            if f != None:
-                f.close()
 
     def __connect_to(self, db_config):
         if self.__db != None:

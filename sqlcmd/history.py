@@ -9,6 +9,9 @@ Stick to the methods in the History class.
 
 $Id$
 """
+
+__docformat__ = 'restructuredtext'
+
 # ---------------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------------
@@ -57,19 +60,17 @@ except ImportError:
 # Functions
 # ---------------------------------------------------------------------------
 
-def get_history(using_raw_input=True, verbose=True):
+def get_history(verbose=True):
     """
     Factory method to create an appropriate History object.
-
-    @type using_raw_input:  boolean
-    @param using_raw_input: C{True} if the caller is using the raw inputter
-                          (which automatically uses GNU Readline under
-                          the covers, if Readline is available). C{False}
-                          otherwise.
-
-    @type verbose:  boolean
-    @param verbose: Whether to display the name of the underlying C{History}
-                    object
+    
+    :Parameters:
+        verbose : bool
+            ``True`` to display a message on standard output about what
+            history management mechanism is being used.
+            
+    :rtype: ``History``
+    :return: the ``History`` object
     """
     global _have_readline
     global _have_pyreadline
@@ -77,17 +78,16 @@ def get_history(using_raw_input=True, verbose=True):
     if _have_pyreadline:
         if verbose:
             print 'Using pyreadline for history management.'
-        result = PyReadlineHistory(using_raw_input)
+        result = PyReadlineHistory()
 
     elif _have_readline:
         if verbose:
             print 'Using readline for history management.'
-        result = ReadlineHistory(using_raw_input)
+        result = ReadlineHistory()
 
     else:
-        if verbose:
-            print 'Using simple history package for history management.'
-        result = SimpleHistory()
+        print 'WARNING: Readline unavailable. There will be no history.'
+        result = DummyHistory()
 
     result.max_length = DEFAULT_MAXLENGTH
     return result
@@ -161,9 +161,6 @@ class History(object):
     def remove_item(self, i):
         pass
 
-    def use_raw_input(self):
-        return True
-
     @abstract
     def clear_history(self):
         pass
@@ -192,7 +189,7 @@ class History(object):
             for i in range(1, index):
                 buf += [self.get_item(i)]
 
-        self.replace_history(buf)
+            self.replace_history(buf)
 
     def replace_history(self, buf):
         self.clear_history()
@@ -221,11 +218,10 @@ class History(object):
 
 class ReadlineHistory(History):
 
-    def __init__(self, using_raw_input=True):
+    def __init__(self):
         global _have_readline
         assert(_have_readline)
         History.__init__(self)
-        self.__usingRaw = using_raw_input
 
     def get_item(self, index):
         return readline.get_history_item(index)
@@ -272,20 +268,13 @@ class ReadlineHistory(History):
         readline.set_history_length(n)
 
     def add_item(self, line, force=False):
-        # If using the raw inputter, then readline has already been
-        # called. Otherwise, do it ourselves.
-        if force or (not self.__usingRaw):
-            readline.add_history(line)
-
-    def use_raw_input(self):
-        return self.__usingRaw
-
+        readline.add_history(line)
 
 class PyReadlineHistory(ReadlineHistory):
-    def __init__(self, using_raw_input=True):
+    def __init__(self):
         global _have_pyreadline
         assert(_have_pyreadline)
-        ReadlineHistory.__init__(self, using_raw_input)
+        ReadlineHistory.__init__(self)
 
     def get_item(self, index):
         return self.__get_buf()[index - 1].get_line_text()
@@ -315,61 +304,44 @@ class PyReadlineHistory(ReadlineHistory):
         readline.set_history_length(n)
 
     def add_item(self, line, force=False):
-        if force or (not self.use_raw_input()):
-            # Kludge. pyreadline is a pain in the ass.
-            from pyreadline import lineobj
-            from pyreadline.unicode_helper import ensure_unicode
+        # Kludge. pyreadline is a pain in the ass.
+        from pyreadline import lineobj
+        from pyreadline.unicode_helper import ensure_unicode
 
-            line = ensure_unicode(line.rstrip())
-            readline.add_history(lineobj.ReadLineTextBuffer(line))
+        line = ensure_unicode(line.rstrip())
+        readline.add_history(lineobj.ReadLineTextBuffer(line))
 
     def __get_buf(self):
         return readline.rl._history.history
 
-class SimpleHistory(History):
+class DummyHistory(History):
 
     def __init__(self):
         History.__init__(self)
-        self.__buf = []
-        self.__maxLength = sys.maxint
-        pass
 
     def remove_item(self, i):
-        try:
-            del self.__buf[i - 1]
-        except IndexError:
-            pass
-
-    def get_item(self, index):
-        index -= 1
-        try:
-            return self.__buf[index]
-        except IndexError:
-            return None
-
-    def get_history_list(self):
-        return copy.deepcopy(self.__buf)
-
-    def get_total(self):
-        return len(self.__buf)
-
-    def get_max_length(self):
-        return self.__maxLength
-
-    def set_max_length(self, n):
-        self.__maxLength = n
-
-    def clear_history(self):
-        self.__buf = []
-
-    def add_item(self, line, force=False):
-        if len(self.__buf) >= self.__maxLength:
-            self.__buf[self.__maxLength - 2:] = []
-        self.__buf += [line]
         pass
 
-    def use_raw_input(self):
-        return False
+    def get_item(self, index):
+        return None
+
+    def get_history_list(self):
+        return []
+
+    def get_total(self):
+        return 0
+
+    def get_max_length(self):
+        return 0
+
+    def set_max_length(self, n):
+        pass
+
+    def clear_history(self):
+        pass
+
+    def add_item(self, line, force=False):
+        pass
 
 # ---------------------------------------------------------------------------
 # Main
