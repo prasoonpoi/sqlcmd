@@ -57,7 +57,6 @@ from cmd import Cmd
 import sys
 import os.path
 import os
-import history
 import cPickle
 import tempfile
 import time
@@ -71,6 +70,7 @@ from StringIO import StringIO
 from grizzled import db, system
 from grizzled.cmdline import CommandLineParser
 from grizzled.config import Configuration
+from grizzled import history
 
 # enum is available from http://cheeseshop.python.org/pypi/enum/
 
@@ -439,7 +439,7 @@ class Variable(object):
 class SQLCmd(Cmd):
     """The SQLCmd command interpreter."""
 
-    DEFAULT_HISTORY_MAX = 512
+    DEFAULT_HISTORY_MAX = history.DEFAULT_MAXLENGTH
     COMMENT_PREFIX = '--'
     META_COMMAND_PREFIX = '.'
     BINARY_VALUE_MARKER = "<binary>"
