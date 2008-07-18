@@ -1,7 +1,7 @@
 $Id$
 ---------------------------------------------------------------------------
 
-Version 0.2.2 (...)
+Version 0.2.2 (18 July, 2008)
 
 - Unicode-related changes to permit sqlcmd to handle databases with
   non-ASCII characters. Thanks to Stephane Matamontero (sm /at/ campoint.net)
