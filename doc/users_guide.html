@@ -6,7 +6,7 @@
 <meta name="generator" content="Docutils 0.4: http://docutils.sourceforge.net/" />
 <title>sqlcmd: A Cross-platform, Cross-database SQL Command Line Tool</title>
 <meta name="author" content="Brian M. Clapper" />
-<meta name="date" content="2008-07-17" />
+<meta name="date" content="2008-07-18" />
 <meta name="copyright" content="Copyright © 2008 Brian M. Clapper" />
 <style type="text/css">
 
@@ -133,7 +133,7 @@ ul.simple li
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference" href="mailto:bmc&#64;clapper.org">bmc&#64;clapper.org</a></td></tr>
 <tr><th class="docinfo-name">Date:</th>
-<td>2008-07-17</td></tr>
+<td>2008-07-18</td></tr>
 <tr class="field"><th class="docinfo-name">Web site:</th><td class="field-body"><a class="reference" href="http://www.clapper.org/software/python/sqlcmd/">http://www.clapper.org/software/python/sqlcmd/</a></td>
 </tr>
 <tr><th class="docinfo-name">Copyright:</th>
@@ -722,7 +722,7 @@ and do not require a semi-colon.</p>
 transcript, to whet your whistle:</p>
 <pre class="literal-block">
 $ sqlcmd mydb
-SQLCmd, version 0.1 ($Revision: 7834 $)
+SQLCmd, version 0.1 ($Revision: 7846 $)
 Copyright 2008 Brian M. Clapper.
 
 Type &quot;help&quot; or &quot;?&quot; for help.
@@ -772,6 +772,18 @@ command at all, beyond recognizing the initial <tt class="docutils literal"><spa
 <p>For SQL commands that produce results, such as <tt class="docutils literal"><span class="pre">SELECT</span></tt>, <em>sqlcmd</em> displays
 the result in a tabular form, using as little horizontal real estate as possible.
 It does <strong>not</strong> wrap its output, however.</p>
+<p><em>sqlcmd</em> has explicit support for the following kinds of SQL statements.
+Note that &quot;explicit support&quot; means <em>sqlcmd</em> can do table-name completion
+for those commands (see <a class="reference" href="#command-completion">Command Completion</a>), not that <em>sqlcmd</em> understands
+the SQL syntax.</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">ALTER</span></tt> (e.g., <tt class="docutils literal"><span class="pre">ALTER</span> <span class="pre">TABLE</span></tt>, <tt class="docutils literal"><span class="pre">ALTER</span> <span class="pre">INDEX</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">CREATE</span></tt> (e.g., <tt class="docutils literal"><span class="pre">CREATE</span> <span class="pre">TABLE</span></tt>, <tt class="docutils literal"><span class="pre">CREATE</span> <span class="pre">INDEX</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">DELETE</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">DROP</span></tt> (e.g., <tt class="docutils literal"><span class="pre">DROP</span> <span class="pre">TABLE</span></tt>, <tt class="docutils literal"><span class="pre">DROP</span> <span class="pre">INDEX</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">INSERT</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">UPDATE</span></tt></li>
+</ul>
 <div class="section">
 <h3><a class="toc-backref" href="#id20" id="timings" name="timings">Timings</a></h3>
 <p>By default, <em>sqlcmd</em> times how long it takes to execute a SQL statement
