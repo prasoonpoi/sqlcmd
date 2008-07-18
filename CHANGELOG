@@ -8,6 +8,7 @@ Version 0.2.2 (18 July, 2008)
   for noting the problem and submitting a patch.
 - Fixed a problem with history management and multiline commands.
 - Documented "sqlcmd.history" module.
+- Added --version (-v) command line option.
 
 ---------------------------------------------------------------------------
 Version 0.2.1 (18 July, 2008)

@@ -94,11 +94,13 @@ __all__ = ['SQLCmd', 'main']
 # Constants
 # ---------------------------------------------------------------------------
 
-INTRO = '''SQLCmd, version %s ($Revision$)
-Copyright 2008 Brian M. Clapper.
+VERSION_STAMP = '''SQLCmd, version %s ($Revision$)
+Copyright 2008 Brian M. Clapper.''' % __version__
+
+INTRO =  VERSION_STAMP + '''
 
 Type "help" or "?" for help.
-''' % __version__
+'''
 
 BOOL_STRS = { "on"    : True,
               "off"   : False,
@@ -1659,7 +1661,14 @@ class Main(object):
         opt_parser.add_option('-L', '--logfile', action='store', dest='logfile',
                               help='Dump log messages to LOGFILE, instead of ' \
                                    'standard output')
+        opt_parser.add_option('-v', '--version', action='store_true', 
+                              dest='show_version',
+                              help='Show the version stamp and exit.')
         options, args = opt_parser.parse_args(argv)
+
+        if options.show_version:
+            print VERSION_STAMP
+            sys.exit(0)
 
         args = args[1:]
         if not len(args) in (0, 1, 2):
@@ -1703,7 +1712,7 @@ class Main(object):
 
         if self.__db_connect_info and self.__alias:
             opt_parser.show_usage('You cannot specify both an alias and "-d"')
-
+            
     def __init_logging(self, level, filename):
         """Initialize logging subsystem"""
         date_format = '%H:%M:%S'
