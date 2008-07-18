@@ -1352,7 +1352,7 @@ class SQLCmd(Cmd):
                     else:
                         strValue = str(col_value)
                 else:
-                    strValue = str(col_value)
+                    strValue = unicode(col_value)
 
                 data += [format % (col_sizes[i], strValue)]
                 i += 1
@@ -1408,7 +1408,7 @@ class SQLCmd(Cmd):
                         else:
                             size = len(SQLCmd.BINARY_VALUE_MARKER)
                     else:
-                        size = len(str(col_value))
+                        size = len(unicode(col_value))
 
                     col_sizes[i] = max(col_sizes[i], size)
                     i += 1

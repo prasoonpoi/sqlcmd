@@ -1,6 +1,13 @@
 $Id$
 ---------------------------------------------------------------------------
 
+Version 0.2.2 (...)
+
+- Unicode-related changes to permit sqlcmd to handle databases with
+  non-ASCII characters. Thanks to Stephane Matamontero (sm /at/ campoint.net)
+  for noting the problem and submitting a patch.
+
+---------------------------------------------------------------------------
 Version 0.2.1 (18 July, 2008)
 
 - Now supports the ipython pyreadline module on Windows, allowing sqlcmd
