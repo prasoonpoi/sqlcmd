@@ -840,6 +840,15 @@ class SQLCmd(Cmd):
     def complete_create(self, text, line, start_index, end_index):
         return self.__complete_tables(text)
 
+    def do_alter(self, args):
+        """
+        Run a SQL 'ALTER' statement (e.g., 'ALTER TABLE', 'ALTER INDEX')
+        """
+        self.__handle_update('alter', args)
+
+    def complete_alter(self, text, line, start_index, end_index):
+        return self.__complete_tables(text)
+
     def do_drop(self, args):
         """
         Run a SQL 'DROP' statement (e.g., 'DROP TABLE', 'DROP INDEX')
@@ -899,15 +908,6 @@ class SQLCmd(Cmd):
             except db.Error, ex:
                 log.error('%s' % str(ex))
         return True
-
-    def do_set(self, args):
-        """
-        Handles a 'set' command. This command does nothing. It exists
-        solely to allow sqlcmd to process SQL scripts for other SQL
-        interpreters (e.g., Oracle's SQL*Plus) which do have a 'set'
-        command.
-        """
-        pass
 
     def do_dot_set(self, args):
         """

@@ -1,6 +1,11 @@
 $Id$
 ---------------------------------------------------------------------------
 
+Version 0.2.1 (...)
+
+- Explicit support for ALTER statement, to permit table completion.
+
+---------------------------------------------------------------------------
 Version 0.2 (17 July, 2008)
 
 - "@" is no longer an alias for ".load". It's too complicated to support.

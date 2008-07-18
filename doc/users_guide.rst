@@ -555,6 +555,18 @@ For SQL commands that produce results, such as ``SELECT``, *sqlcmd* displays
 the result in a tabular form, using as little horizontal real estate as possible.
 It does **not** wrap its output, however.
 
+*sqlcmd* has explicit support for the following kinds of SQL statements.
+Note that "explicit support" means *sqlcmd* can do table-name completion
+for those commands (see `Command Completion`_), not that *sqlcmd* understands
+the SQL syntax.
+
+- ``ALTER`` (e.g., ``ALTER TABLE``, ``ALTER INDEX``)
+- ``CREATE`` (e.g., ``CREATE TABLE``, ``CREATE INDEX``)
+- ``DELETE``
+- ``DROP`` (e.g., ``DROP TABLE``, ``DROP INDEX``)
+- ``INSERT``
+- ``UPDATE``
+
 Timings
 ~~~~~~~
 
