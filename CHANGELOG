@@ -7,6 +7,7 @@ Version 0.2.2 (...)
   non-ASCII characters. Thanks to Stephane Matamontero (sm /at/ campoint.net)
   for noting the problem and submitting a patch.
 - Fixed a problem with history management and multiline commands.
+- Documented "sqlcmd.history" module.
 
 ---------------------------------------------------------------------------
 Version 0.2.1 (18 July, 2008)
