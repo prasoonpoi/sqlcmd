@@ -1309,6 +1309,10 @@ class SQLCmd(Cmd):
 
         # Finally, read back the data and dump it.
 
+        max_binary = self.__VARS['binarymax'].value
+        if max_binary < 0:
+            max_binary = sys.maxint
+
         f = open(temp)
         eof = False
         while not eof:
