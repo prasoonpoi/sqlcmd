@@ -53,7 +53,7 @@ Some features at a glance
   module. (Those drivers are, in turn, built on top of standard Python
   DB API drivers like ``psycopg2`` and ``MySQLdb``.)
 - *sqlcmd* is written entirely in `Python`_, which makes it very portable
-  though the database drivers are often written in C and may not be available
+  (though the database drivers are often written in C and may not be available
   on all platforms).
 
 .. _Grizzled API: http://www.clapper.org/software/python/grizzled/
