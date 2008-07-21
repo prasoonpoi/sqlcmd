@@ -106,15 +106,6 @@ INTRO =  VERSION_STAMP + '''
 Type "help" or "?" for help.
 '''
 
-BOOL_STRS = { "on"    : True,
-              "off"   : False,
-              "yes"   : True,
-              "no"    : False,
-              "1"     : True,
-              "0"     : False,
-              "true"  : True,
-              "false" : False }
-
 DEFAULT_CONFIG_DIR = os.path.join(os.environ.get('HOME', os.getcwd()),
                                   '.sqlcmd')
 
