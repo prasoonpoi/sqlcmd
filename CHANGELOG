@@ -1,7 +1,7 @@
 $Id$
 ---------------------------------------------------------------------------
 
-Version 0.2.3 (...)
+Version 0.2.3 (21 July, 2008)
 
 - Fixed bug that caused sqlcmd to crash when displaying binary data.
 
@@ -9,8 +9,8 @@ Version 0.2.3 (...)
 Version 0.2.2 (18 July, 2008)
 
 - Unicode-related changes to permit sqlcmd to handle databases with
-  non-ASCII characters. Thanks to Stephane Matamontero (sm /at/ campoint.net)
-  for noting the problem and submitting a patch.
+  non-ASCII characters. Thanks to Stephane Matamontero for noting the problem
+  and submitting a patch.
 - Fixed a problem with history management and multiline commands.
 - Documented "sqlcmd.history" module.
 - Added --version (-v) command line option.
