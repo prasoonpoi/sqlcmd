@@ -29,26 +29,29 @@ Some features at a glance
 
 - Connection parameters for individual databases are kept in a configuration
   file in your home directory.
-- Databases can be assigned multiple logical names.
-- *sqlcmd* has command history management, with `GNU Readline`_ support.
-  History files are saved per database.
-- *sqlcmd* supports SQL, but also supports database metadata (getting a list
-  of tables, querying the table's columns and their data types, listing the
-  indexes and foreign keys for a table, etc.).
-- *sqlcmd* command has a ``.set`` command that displays and controls *sqlcmd*
-  settings.
-- *sqlcmd* provides a standard interface that works the same no matter what
-  database you're using.
-- *sqlcmd* uses the enhanced database drivers in the `Grizzled API`_'s ``db``
+- Multiple logical names for each database.
+- Command history management, with `GNU Readline`_ support. Each database
+  has its own history file.
+- Supports retrieving database metadata (getting a list of tables, querying
+  the table's columns and their data types, listing the indexes and foreign
+  keys for a table, etc.).
+- Standard interface that works the same no matter what database you're using.
+- Uses the enhanced database drivers in the `Grizzled API`_'s ``db``
   module. (Those drivers are, in turn, built on top of standard Python
   DB API drivers like ``psycopg2`` and ``MySQLdb``.)
-- *sqlcmd* is written entirely in `Python`_, which makes it very portable
-  though the database drivers are often written in C and may not be available
+- Supports `MySQL`_, `Oracle`_, `PostgreSQL`_, `SQL Server`_ and `SQLite 3`_
+  without customization (though you will have to install Python DB API drivers 
+  for all but SQLite 3).
+- Written entirely in `Python`_, which makes it very portable (though the
+  Python DB API database drivers are often written in C and may not be available
   on all platforms).
 
 .. _Grizzled API: http://www.clapper.org/software/python/grizzled/
 .. _GNU Readline: http://cnswww.cns.cwru.edu/php/chet/readline/rluserman.html
 .. _Python: http://www.python.org/
+.. _Oracle: http://www.oracle.com/
+.. _SQL Server: http://www.microsoft.com/sqlserver/
+.. _SQLite 3: http://www.sqlite.org/
 
 In short, *sqlcmd* is a SQL command tool that attempts to provide the same
 interface for all supported databases and across all platforms.
@@ -343,11 +346,8 @@ can extend *sqlcmd* to support additional database. See the section on
     
 .. _psycopg2: http://pypi.python.org/pypi/psycopg2/2.0.4
 .. _MySQLdb: http://sourceforge.net/projects/mysql-python
-.. _Oracle: http://www.oracle.com/
 .. _cx_Oracle: http://python.net/crew/atuining/cx_Oracle/
-.. _SQL Server: http://www.microsoft.com/sqlserver/
 .. _pymssql: http://pymssql.sourceforge.net/
-.. _SQLite 3: http://www.sqlite.org/
 
 A Note about Database Names
 +++++++++++++++++++++++++++
@@ -392,7 +392,6 @@ names:
 - ``oracle``: the other alias
 - ``cust001``: the actual database name, from the ``database`` option
 - ``cust``: a unique abbreviation of ``customers`` or ``cust001``
-
 
 .. _dot_driver:
 
@@ -502,7 +501,9 @@ Other commands, such as internal commands like ``.set``, are single-line command
 and do not require a semi-colon.
 
 Before going into each specific type of command, here's a brief *sqlcmd*
-transcript, to whet your whistle::
+transcript, to whet your appetite:
+
+.. code-block:: text
 
     $ sqlcmd mydb
     SQLCmd, version 0.1 ($Revision$)
@@ -576,7 +577,9 @@ Timings
 
 By default, *sqlcmd* times how long it takes to execute a SQL statement
 and prints the resulting times on the screen. To suppress this behavior,
-set the ``timings`` variable to ``false``::
+set the ``timings`` variable to ``false``:
+
+.. code-block:: text
 
     .set timings false
 
@@ -588,7 +591,9 @@ By default, *sqlcmd* does *not* echo commands to the screen. That's a
 reasonable behavior when you're using *sqlcmd* interactively. However, when
 you're loading a file full of *sqlcmd* statements, you might want each
 statement to be echoed before it is run. To enable command echo, set the
-``echo`` variable to ``true``::
+``echo`` variable to ``true``:
+
+.. code-block:: text
 
     .set echo true
 
@@ -598,7 +603,9 @@ Comments
 *sqlcmd* honors (and ignores) SQL comments, as long as each comment is on a
 line by itself. A SQL comment begins with "--".
 
-Example of support syntax::
+Example of support syntax:
+
+.. code-block:: text
 
     -- This is a SQL comment.
     -- And so is this.
@@ -659,7 +666,9 @@ See also:
 
 The ``.connect`` command closes the current database connection and opens
 a new one to a (possibly) different database. The general form of the command
-is::
+is:
+
+.. code-block:: text
 
     .connect dbname
 
@@ -672,12 +681,16 @@ on the command line.
 ~~~~~~~~~~~~~
 
 The ``.describe`` command, which can be abbreviated ``.desc``, is used to
-describe a table. The general form of the command is::
+describe a table. The general form of the command is:
+
+.. code-block:: text
 
     .describe tablename [full]
 
 If "full" is not specified, then *sqlcmd* prints a simple description of the
-table and its columns. For instance::
+table and its columns. For instance:
+
+.. code-block:: text
 
     ? .desc users
     -----------
@@ -696,7 +709,9 @@ table and its columns. For instance::
     isenabled      character(1) NOT NULL
 
 If "full" is specified, *sqlcmd* also gathers and displays information about
-the table's indexes. For example::
+the table's indexes. For example:
+
+.. code-block:: text
 
     ? .desc users
     -----------
@@ -736,7 +751,9 @@ complete explanation of *sqlcmd*'s command history capabilities.
 
 Loads an external file of commands (typically SQL) and runs those commands in
 the current session *without exiting*. After the commands are run, *sqlcmd*
-returns to its interactive prompt. ``.load`` can be invoked in several ways::
+returns to its interactive prompt. ``.load`` can be invoked in several ways:
+
+.. code-block:: text
 
     .load path
     @ path
@@ -747,7 +764,9 @@ All three commands do exactly the same thing.
 ``r`` or ``redo``
 ~~~~~~~~~~~~~~~~~
 
-Re-issue a command from the history. General usage::
+Re-issue a command from the history. General usage:
+
+.. code-block:: text
 
     r [num|str]
     redo [num|str]
@@ -756,7 +775,9 @@ If *num* is present, it is the number of the command to re-run. If *str*
 is specified, the most recent command that *str* (using a substring match)
 is re-run.
 
-For example, consider this history::
+For example, consider this history:
+
+.. code-block:: text
 
     ? .history
        1: .show tables;
@@ -764,7 +785,9 @@ For example, consider this history::
        3: .desc foo;
        4: .desc foobar;
 
-Here are various ``redo`` invocations::
+Here are various ``redo`` invocations:
+
+.. code-block:: text
 
     ? r 1  <--- re-runs command 1, ".show tables"
     ? r s  <--- re-runs the most recent command that starts with "s", which is "select * from foo"
@@ -787,7 +810,9 @@ See also:
 ~~~~~~~~~
 
 The ``.set`` command displays or alters internal *sqlcmd* variables. Without
-any parameters, ``.set`` displays all internal variables and their values::
+any parameters, ``.set`` displays all internal variables and their values:
+
+.. code-block:: text
 
     ? .set
     autocommit = true
@@ -848,7 +873,9 @@ database and treats the command as it would treate a SQL ``SELECT``. This
 policy allows you to use certain RDBMS-specific commands without *sqlcmd*
 having to support them explicitly. For instance, here's what happens if you've
 connected *sqlcmd* to a SQLite database and you try to use the SQLite 
-``EXPLAIN`` command::
+``EXPLAIN`` command:
+
+.. code-block:: text
 
     ? explain select distinct id from foo;
     Execution time: 0.000 seconds
@@ -878,7 +905,9 @@ connected *sqlcmd* to a SQLite database and you try to use the SQLite
     19   Noop          0  0                   
     
 Similarly, here's what happens when you run the ``ANALYZE`` command on a
-PostgreSQL database::
+PostgreSQL database:
+
+.. code-block:: text
 
     ? analyze verbose;
     Execution time: 0.054 seconds
