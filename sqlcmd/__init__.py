@@ -2,6 +2,7 @@
 # -*- coding: iso-8859-1 -*-
 #
 # $Id$
+
 """
 sqlcmd - a simple SQL command interpreter
 
@@ -47,6 +48,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 $Id$
 """
+
 # ---------------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------------
@@ -70,6 +72,8 @@ from StringIO import StringIO
 from grizzled import db, system
 from grizzled.cmdline import CommandLineParser
 from grizzled.config import Configuration
+from grizzled.log import WrappingLogFormatter
+from grizzled.misc import str2bool
 from grizzled import history
 
 # enum is available from http://cheeseshop.python.org/pypi/enum/
@@ -147,14 +151,6 @@ def main():
 
     return rc
 
-def str2bool(s):
-    """Convert a string to a boolean"""
-    s = s.lower()
-    try:
-        return BOOL_STRS[s]
-    except KeyError:
-        raise ValueError, 'Bad value "%s" for boolean string' % s
-
 def die(s):
     """Like Perl's die()"""
     log.error(s)
@@ -163,36 +159,6 @@ def die(s):
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
-
-class WrappingLogFormatter(logging.Formatter):
-    """
-    A log formatter that writes each message and wraps it on line boundaries.
-    """
-    def __init__(self, format=None, date_format=None, max_width=79):
-        """
-        Initialize a new ``WrappingLogFormatter``.
-
-        :Parameters:
-            format : str
-                The format to use, or ``None`` for the logging default
-
-            date_format : str
-                Date format
-
-            max_width : int
-                Maximum line width
-        """
-        self.wrapper = textwrap.TextWrapper(width=max_width,
-                                            subsequent_indent='    ')
-        logging.Formatter.__init__(self, format, date_format)
-
-    def format(self, record):
-        s = logging.Formatter.format(self, record)
-        result = []
-        for line in s.split('\n'):
-            result += [self.wrapper.fill(line)]
-
-        return '\n'.join(result)
 
 class DBInstanceConfigItem(object):
     """

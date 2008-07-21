@@ -1,6 +1,12 @@
 $Id$
 ---------------------------------------------------------------------------
 
+Version 0.3 (...)
+
+- Moved WrappingLogFormatter to Grizzled API (grizzled.log module).
+- Moved str2bool() function to Grizzled API (grizzled.misc module).
+
+---------------------------------------------------------------------------
 Version 0.2.3 (21 July, 2008)
 
 - Fixed bug that caused sqlcmd to crash when displaying binary data.
