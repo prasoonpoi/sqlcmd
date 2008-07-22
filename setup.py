@@ -77,7 +77,7 @@ setup(
     author           = info['__author__'],
     author_email     = info['__email__'],
     entry_points     = {'console_scripts' : 'sqlcmd=sqlcmd:main'},
-    install_requires = ['grizzled>=0.7.3', 
+    install_requires = ['grizzled>=0.8', 
                         'enum>=0.4.3',],
     classifiers      = ['Environment :: Console',
                         'Intended Audience :: Developers',
