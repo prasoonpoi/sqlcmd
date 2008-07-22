@@ -4,7 +4,8 @@ $Id$
 Version 0.3 (22 July, 2008)
 
 - Ctrl-C (SIGINT) at the command prompt now simply returns to the command
-  prompt without doing anything, instead of exiting sqlcmd.
+  prompt without doing anything, instead of exiting sqlcmd. Thanks to James
+  William Pye (x /at/ jwp.name) for the suggestion.
 - Added .echo command
 - Added ability to specify an on-connect script for each database listed
   in the configuration file. sqlcmd runs the on-connect script,  immediately
