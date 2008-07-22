@@ -3,6 +3,10 @@ $Id$
 
 Version 0.3 (...)
 
+- Added .echo command
+- Added ability to specify an on-connect script for each database listed
+  in the configuration file. sqlcmd runs the on-connect script,  immediately
+  after connecting to the database.
 - Moved WrappingLogFormatter to Grizzled API (grizzled.log module).
 - Moved str2bool() function to Grizzled API (grizzled.misc module).
 

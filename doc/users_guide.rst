@@ -316,6 +316,25 @@ supports the following parameters.
     |                  | list allows you to refer to the |                     |
     |                  | database by multiple names      |                     |
     +------------------+---------------------------------+---------------------+
+    | ``onconnect``    | Path to a script of commands to | optional            |
+    |                  | run just after connecting to    |                     |
+    |                  | database. The file can contain  |                     |
+    |                  | any valid *sqlcmd* command      |                     |
+    |                  | (including, obviously, SQL).    |                     |
+    |                  |                                 |                     |
+    |                  | Any leading "~" in the path is  |                     |
+    |                  | expanding to the home directory |                     |
+    |                  | of the user running *sqlcmd*.   |                     |
+    |                  | Relative paths are assumed to   |                     |
+    |                  | be relative to the directory    |                     |
+    |                  | containing the configuration    |                     |
+    |                  | file.                           |                     |
+    |                  |                                 |                     |
+    |                  | *Hint*: Specify the path using  |                     |
+    |                  | Unix-style forward slashes,     |                     |
+    |                  | even on Windows, to avoid       |                     |
+    |                  | problems with backslashes.      |                     |
+    +------------------+---------------------------------+---------------------+
 
 Database Types
 ++++++++++++++
@@ -497,8 +516,8 @@ executing each one as it's entered.
 
 Some commands (e.g., all SQL commands, and some others) are not executed until
 a final ";" character is seen on the input; this permits multi-line commands.
-Other commands, such as internal commands like ``.set``, are single-line commands
-and do not require a semi-colon.
+Other commands, such as internal commands like ``.set``, are single-line
+commands and do not require a semi-colon.
 
 Before going into each specific type of command, here's a brief *sqlcmd*
 transcript, to whet your appetite:
@@ -506,7 +525,7 @@ transcript, to whet your appetite:
 .. code-block:: text
 
     $ sqlcmd mydb
-    SQLCmd, version 0.1 ($Revision$)
+    SQLCmd, version 0.3 ($Revision$)
     Copyright 2008 Brian M. Clapper.
 
     Type "help" or "?" for help.
@@ -740,26 +759,23 @@ the table's indexes. For example:
             Description: Unique, non-clustered btree index
 
 
+``.echo``
+~~~~~~~~~
+
+Echoes all remaining arguments to standard output. This command is useful
+primarily in scripts.
+
+Example:
+
+.. code-block:: text
+
+    .echo Don't look now, but I'm about to run SELECT
+
 ``.history``
 ~~~~~~~~~~~~
 
 ``.history`` displays the command history. See `Command History`_ for a
 complete explanation of *sqlcmd*'s command history capabilities.
-
-``.load``
-~~~~~~~~~
-
-Loads an external file of commands (typically SQL) and runs those commands in
-the current session *without exiting*. After the commands are run, *sqlcmd*
-returns to its interactive prompt. ``.load`` can be invoked in several ways:
-
-.. code-block:: text
-
-    .load path
-    @ path
-    @path
-
-All three commands do exactly the same thing.
 
 ``r`` or ``redo``
 ~~~~~~~~~~~~~~~~~
@@ -805,6 +821,19 @@ See also:
 - `begin`_
 - `commit`_
 
+``.run``
+~~~~~~~~~
+
+Loads an external file of commands (typically SQL) and runs those commands in
+the current session *without exiting*. After the commands are run, *sqlcmd*
+returns to its interactive prompt. ``.run`` can also be invoked as ``.load``.
+
+.. code-block:: text
+
+    .run path
+    .load path
+
+Both commands do exactly the same thing.
 
 ``.set``
 ~~~~~~~~~

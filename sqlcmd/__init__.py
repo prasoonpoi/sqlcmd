@@ -164,7 +164,9 @@ class DBInstanceConfigItem(object):
                  user,
                  password,
                  type,
-                 port):
+                 port,
+                 on_connect,
+                 config_dir):
         self.section = section
         self.aliases = aliases
         self.primary_alias = aliases[0]
@@ -174,6 +176,22 @@ class DBInstanceConfigItem(object):
         self.password = password
         self.port = port
         self.db_type = type
+        self.on_connect = None
+
+        if on_connect:
+            if on_connect[0] == '~':
+                on_connect = os.path.expanduser(on_connect)
+
+            if not os.path.isabs(on_connect):
+                on_connect = os.path.abspath(os.path.join(config_dir,
+                                                          on_connect))
+            if not os.access(on_connect, os.R_OK|os.F_OK):
+                log.warning('Database "%s": on-connect script "%s" either '
+                            'does not exist, is not readable, or is not a '
+                            'file.' % (database, on_connect))
+                on_connect = None
+
+            self.on_connect = on_connect
 
     @property
     def db_key(self):
@@ -194,8 +212,9 @@ class DBInstanceConfigItem(object):
 class SQLCmdConfig(object):
     """ Data from the .sqlcmd file in the user's home directory"""
 
-    def __init__(self):
+    def __init__(self, config_dir):
         self.__config = {}
+        self.__config_dir = config_dir
 
     def total_databases(self):
         return len(self.__config.keys())
@@ -231,9 +250,9 @@ class SQLCmdConfig(object):
         user = cfg.get(section, 'user', optional=True)
         password = cfg.get(section, 'password', optional=True)
         db_type = cfg.get(section, 'type')
+        on_connect = cfg.get(section, 'onconnect', optional=True)
 
         aliases += [db_name]
-
         try:
             cfg_item = DBInstanceConfigItem(section,
                                             aliases,
@@ -242,7 +261,9 @@ class SQLCmdConfig(object):
                                             user,
                                             password,
                                             db_type,
-                                            port)
+                                            port,
+                                            on_connect,
+                                            self.__config_dir)
         except ValueError, msg:
             raise ConfigurationError, \
                   'Configuration section [%s]: %s' % (section, msg)
@@ -819,7 +840,7 @@ class SQLCmd(Cmd):
         self.__ensure_connected()
         if self.__flag_is_set('autocommit'):
             log.warning('Autocommit is enabled. "begin" ignored')
- 
+
     def do_commit(self, args):
         """
         Commit the current transaction. Ignored if 'autocommit' is enabled.
@@ -1027,23 +1048,52 @@ class SQLCmd(Cmd):
     def complete_dot_describe(self, text, line, start_index, end_index):
         return self.__complete_tables(text)
 
+    def do_dot_echo(self, args):
+        """
+        Echo all remaining arguments to standard output. Useful for
+        scripts.
+        
+        Usage:
+            .echo [args]
+        """
+        if args:
+            args = args.strip()
+            
+        print args
+
     def do_dot_load(self, args):
         """
         Load and run a file full of commands without exiting the command
         shell.
 
-        Usage: .load file
+        Usage: .run file
+               .load file
+        """
+        self.do_dot_run(args)
+
+    def complete_dot_load(self, text, line, start_index, end_index):
+        return self.complete_dot_run(text, line, start_index, end_index)
+
+    def do_dot_run(self, args):
+        """
+        Load and run a file full of sqlcmd commands without exiting the SQL
+        command shell. After the contents of the file have been run through
+        sqlcmd, you will be prompted again for interactive input (if sqlcmd
+        is running interactively).
+
+        Usage: .run file
+               .load file
         """
         tokens = args.split(None, 1)
         if len(tokens) > 1:
             raise BadCommandError, 'Too many arguments to ".load"'
 
         try:
-            self.__load_file(os.path.expanduser(tokens[0]))
+            self.__run_file(os.path.expanduser(tokens[0]))
         except IOError, (ex, msg):
             log.error('Unable to load file "%s": %s' % (tokens[0], msg))
 
-    def complete_dot_load(self, text, line, start_index, end_index):
+    def complete_dot_run(self, text, line, start_index, end_index):
         matches = []
         if text == None:
             text == ''
@@ -1509,12 +1559,15 @@ class SQLCmd(Cmd):
     def __show_history(self):
         self.__history.show()
 
-    def __load_file(self, file):
-        with open(file) as f:
-            for line in f.readlines():
-                if line[-1] == '\n':
-                    line = line[:-1] # chop \n
-                self.cmdqueue += [line]
+    def __run_file(self, file):
+        try:
+            with open(file) as f:
+                for line in f.readlines():
+                    if line[-1] == '\n':
+                        line = line[:-1] # chop \n
+                    self.cmdqueue += [line]
+        except IOError, ex:
+            log.error('Cannot run file "%s": %s' % (file, str(ex)))
 
     def __connect_to(self, db_config):
         if self.__db != None:
@@ -1532,6 +1585,10 @@ class SQLCmd(Cmd):
         history_file = HISTORY_FILE_FORMAT % db_config.primary_alias
         self.__history_file = os.path.expanduser(history_file)
         self.__init_history()
+
+        if db_config.on_connect:
+            log.debug('Running on-connect script "%s"' % db_config.on_connect)
+            self.__run_file(db_config.on_connect)
 
     def __ensure_connected(self):
         if self.__db == None:
@@ -1557,7 +1614,7 @@ class Main(object):
 
         # Load the configuration
 
-        cfg = SQLCmdConfig()
+        cfg = SQLCmdConfig(os.path.dirname(self.__config_file))
         try:
             cfg.load_file(self.__config_file)
         except IOError, ex:
@@ -1622,7 +1679,7 @@ class Main(object):
         opt_parser.add_option('-L', '--logfile', action='store', dest='logfile',
                               help='Dump log messages to LOGFILE, instead of ' \
                                    'standard output')
-        opt_parser.add_option('-v', '--version', action='store_true', 
+        opt_parser.add_option('-v', '--version', action='store_true',
                               dest='show_version',
                               help='Show the version stamp and exit.')
         options, args = opt_parser.parse_args(argv)
@@ -1673,14 +1730,19 @@ class Main(object):
 
         if self.__db_connect_info and self.__alias:
             opt_parser.show_usage('You cannot specify both an alias and "-d"')
-            
+
     def __init_logging(self, level, filename):
         """Initialize logging subsystem"""
         date_format = '%H:%M:%S'
 
+        if level == None:
+            level = logging.WARNING
+
+        logging.basicConfig(level=level)
+
         stderr_handler = logging.StreamHandler(sys.stderr)
         formatter = WrappingLogFormatter(format='%(levelname)s: %(message)s')
-        stderr_handler.setLevel(logging.WARNING)
+        stderr_handler.setLevel(level)
         stderr_handler.setFormatter(formatter)
         handlers = [stderr_handler]
 
@@ -1691,9 +1753,6 @@ class Main(object):
             msg_format  = '%(asctime)s %(levelname)s (%(name)s) %(message)s'
             formatter = WrappingLogFormatter(format=msg_format,
                                              date_format=date_format)
-            if level == None:
-                level = logging.WARNING
-
             file_handler.setLevel(level)
             file_handler.setFormatter(formatter)
 
