@@ -127,9 +127,6 @@ def main():
     try:
         Main().run(sys.argv)
 
-    except KeyboardInterrupt:
-        pass
-
     except SystemExit:
         pass
 
@@ -415,8 +412,89 @@ class Variable(object):
     def __hash__(self):
         return self.name.__hash__()
 
+class ECmd(Cmd):
+    """
+    Slightly enhanced version of ``cmd.Cmd`` that changes the command loop
+    a little to handle SIGINT more appropriately.
+    """
+    def __init__(self, completekey='tab', stdin=None, stdout=None):
+        """
+        Instantiate a line-oriented interpreter framework.
 
-class SQLCmd(Cmd):
+        The optional argument 'completekey' is the readline name of a
+        completion key; it defaults to the Tab key. If completekey is
+        not None and the readline module is available, command completion
+        is done automatically. The optional arguments stdin and stdout
+        specify alternate input and output file objects; if not specified,
+        sys.stdin and sys.stdout are used.
+
+        """
+        Cmd.__init__(self, completekey, stdin, stdout)
+
+    def cmdloop(self, intro=None):
+        """
+        Repeatedly issue a prompt, accept input, parse an initial prefix
+        off the received input, and dispatch to action methods, passing them
+        the remainder of the line as argument.
+
+        This version is a direct rip-off of the parent class's ``cmdloop()``
+        method, with some changes to support SIGINT properly.
+        """
+        self.preloop()
+        if self.use_rawinput and self.completekey:
+            try:
+                import readline
+                self.old_completer = readline.get_completer()
+                readline.set_completer(self.complete)
+                readline.parse_and_bind(self.completekey+": complete")
+            except ImportError:
+                pass
+        try:
+            if intro is not None:
+                self.intro = intro
+            if self.intro:
+                self.stdout.write(str(self.intro)+"\n")
+            stop = None
+            while not stop:
+                try:
+                    if self.cmdqueue:
+                        line = self.cmdqueue.pop(0)
+                    else:
+                        line = self.get_input(self.prompt)
+
+                    line = self.precmd(line)
+                    stop = self.onecmd(line)
+                    stop = self.postcmd(stop, line)
+                except KeyboardInterrupt:
+                    print
+
+            self.postloop()
+        finally:
+            if self.use_rawinput and self.completekey:
+                try:
+                    import readline
+                    readline.set_completer(self.old_completer)
+                except ImportError:
+                    pass
+                
+    def get_input(self, prompt):
+        if self.use_rawinput:
+            try:
+                line = raw_input(self.prompt)
+            except EOFError:
+                line = 'EOF'
+        else:
+            self.stdout.write(self.prompt)
+            self.stdout.flush()
+            line = self.stdin.readline()
+            if not len(line):
+                line = 'EOF'
+            else:
+                line = line[:-1] # chop \n
+                
+        return line
+
+class SQLCmd(ECmd):
     """The SQLCmd command interpreter."""
 
     DEFAULT_HISTORY_MAX = history.DEFAULT_MAXLENGTH
@@ -479,8 +557,8 @@ class SQLCmd(Cmd):
         for v in vars:
             self.__VARS[v.name] = v
 
-    def run_file(self, file):
-        self.__load_file(file)
+    def run_file_and_exit(self, file):
+        self.__run_file(file)
         self.cmdqueue += ["EOF"]
         self.__interactive = False
         self.__prompt = ""
@@ -881,6 +959,14 @@ class SQLCmd(Cmd):
             except db.Error, ex:
                 log.error('%s' % str(ex))
         return True
+
+    def do_dot_exit(self, args):
+        """
+        Exit sqlcmd. .exit is equivalent to typing the key sequence
+        corresponding to an end-of-file condition (Ctrl-D on Unix systems,
+        Ctrl-Z on Windows).
+        """
+        self.cmdqueue += ['EOF']
 
     def do_dot_set(self, args):
         """
@@ -1654,7 +1740,7 @@ class Main(object):
 
         if self.__input_file:
             try:
-                cmd.run_file(self.__input_file)
+                cmd.run_file_and_exit(self.__input_file)
             except IOError, (ex, errormsg):
                 die('Failed to load file "%s": %s' %\
                     (self.__input_file, errormsg))

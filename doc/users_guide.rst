@@ -510,7 +510,12 @@ Using *sqlcmd*
 
 When run in interactive mode (i.e., without an *@file* parameter_), *sqlcmd*
 prompts on standard input with a "?" and waits for commands to be entered,
-executing each one as it's entered.
+executing each one as it's entered. It continues to prompt for commands until
+either:
+
+- it encounters an end-of-file condition (Ctrl-D on Unix systems, Ctrl-Z
+  on Windows), or
+- you type the ``.exit`` command.
 
 .. _parameter: `Parameters`_
 
@@ -770,6 +775,12 @@ Example:
 .. code-block:: text
 
     .echo Don't look now, but I'm about to run SELECT
+
+``.exit``
+~~~~~~~~~
+
+Exit *sqlcmd*. ``.exit`` is equivalent to typing the key sequence corresponding
+to an end-of-file condition (Ctrl-D on Unix systems, Ctrl-Z on Windows).
 
 ``.history``
 ~~~~~~~~~~~~
