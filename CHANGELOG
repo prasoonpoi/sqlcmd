@@ -1,7 +1,7 @@
 $Id$
 ---------------------------------------------------------------------------
 
-Version 0.3 (...)
+Version 0.3 (22 July, 2008)
 
 - Ctrl-C (SIGINT) at the command prompt now simply returns to the command
   prompt without doing anything, instead of exiting sqlcmd.
