@@ -1,0 +1,33 @@
+James William Pye <x@jwp.name>
+
+> By "schema-qualified table
+> completion", what do you mean?
+
+? select * from pub<Tab>
+# completes to
+? select * from public.
+# in cases of ambiguity, it should show a list of schemas as well as tables.
+
+In turn:
+? select * from public.<Tab>
+# shows tables in the public schema
+
+
+Also, I would imagine:
+
+? select * from <Tab>
+# shows schemas along with tables that don't require schema qualification.
+# [In pgsql, SHOW search_path influences what tables/objects are accessible without explicit qualification.]
+
+
+Hope that clears it up. :)
+
+
+I can't recall what mysql's table containment structure is, but PostgreSQL's is:
+
+cluster("physical data directory/instance") -> database -> schema -> table
+
+[Notably, you cannot access a table in a database that you are not
+connected to.]
+
+----------
