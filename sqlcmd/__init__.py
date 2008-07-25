@@ -290,7 +290,7 @@ class SQLCmdConfig(object):
                                            password,
                                            type,
                                            port,
-                                           on_connect,
+                                           None,
                                            self.__config_dir)
             except ValueError, msg:
                 raise ConfigurationError, \
