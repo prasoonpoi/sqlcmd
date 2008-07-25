@@ -289,7 +289,9 @@ class SQLCmdConfig(object):
                                            user,
                                            password,
                                            type,
-                                           port)
+                                           port,
+                                           on_connect,
+                                           self.__config_dir)
             except ValueError, msg:
                 raise ConfigurationError, \
                       'Error in configuration for alias "%s": %s' % (alias, msg)
