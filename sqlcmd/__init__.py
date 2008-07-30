@@ -133,7 +133,7 @@ def main():
     except:
         rc = 1
         if log:
-            log.exception('Error')
+            log.exception('')
         else:
             traceback.print_exc()
 
@@ -1568,7 +1568,7 @@ class SQLCmd(ECmd):
         if full:
             print '\n--------\nIndexes:\n--------\n'
             indexes = cursor.get_index_metadata(table)
-            if indexes == None:
+            if not indexes:
                 print 'No indexes.'
             else:
                 width = 0
