@@ -541,20 +541,28 @@ class SQLCmd(ECmd):
                     db.commit()
 
         vars = [
-            Variable('echo',       SQLCmd.VAR_TYPES.boolean, False,
-                     'Whether or not SQL statements are echoed.'),
-            Variable('timings',    SQLCmd.VAR_TYPES.boolean, True,
-                     'Whether or not to show how SQL statements take.'),
             Variable('autocommit', SQLCmd.VAR_TYPES.boolean, True,
                      'Whether SQL statements are auto-committed or not.',
                      autocommitChanged),
-            Variable('stacktrace', SQLCmd.VAR_TYPES.boolean, False,
-                     'Whether or not to show a stack trace on error.'),
-            Variable('showbinary', SQLCmd.VAR_TYPES.boolean, False,
-                     'Whether or not to try to display BINARY column values.'),
+
             Variable('binarymax', SQLCmd.VAR_TYPES.integer, 20,
                      'Number of characters to show in a BINARY column, if '
                      '"showbinary" is "true".'),
+
+            Variable('echo',       SQLCmd.VAR_TYPES.boolean, False,
+                     'Whether or not SQL statements are echoed.'),
+
+            Variable('history', SQLCmd.VAR_TYPES.boolean, True,
+                     'Whether or not to save commands in the history.'),
+
+            Variable('stacktrace', SQLCmd.VAR_TYPES.boolean, False,
+                     'Whether or not to show a stack trace on error.'),
+
+            Variable('showbinary', SQLCmd.VAR_TYPES.boolean, False,
+                     'Whether or not to try to display BINARY column values.'),
+
+            Variable('timings',    SQLCmd.VAR_TYPES.boolean, True,
+                     'Whether or not to show how SQL statements take.'),
                ]
         for v in vars:
             self.__VARS[v.name] = v
@@ -662,9 +670,11 @@ class SQLCmd(ECmd):
             if self.__partial_command != None:
                 s = self.__partial_command + ' ' + s
                 self.__partial_command = None
-                self.__history.cut_back_to(self.__partial_cmd_history_start + 1)
+                cmd_start = self.__partial_cmd_history_start
                 self.__partial_cmd_history_start = None
-                self.__history.add_item(s, force=True)
+                if self.__flag_is_set('history'):
+                    self.__history.cut_back_to(cmd_start + 1)
+                    self.__history.add_item(s, force=True)
 
             # Strip the trailing ';'
             if s[-1] == ';':
@@ -1650,10 +1660,16 @@ class SQLCmd(ECmd):
     def __run_file(self, file):
         try:
             with open(file) as f:
+                history = self.__flag_is_set('history')
+                #if history:
+                    #self.cmdqueue += '.set history false'
                 for line in f.readlines():
                     if line[-1] == '\n':
                         line = line[:-1] # chop \n
                     self.cmdqueue += [line]
+                if history:
+                    self.cmdqueue += ['.set history true']
+                    
         except IOError, ex:
             log.error('Cannot run file "%s": %s' % (file, str(ex)))
 
