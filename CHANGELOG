@@ -1,9 +1,11 @@
 $Id$
 ---------------------------------------------------------------------------
 
-Version 0.3.1 (...)
+Version 0.3.1 (5 August, 2008)
 
 - Fixed bug with --database option introduced in version 0.3
+- When loading a file (via ".load" at the prompt or @file on the command line),
+  sqlcmd no longer adds the contents to the history.
 
 ---------------------------------------------------------------------------
 Version 0.3 (22 July, 2008)
