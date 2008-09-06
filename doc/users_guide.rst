@@ -39,9 +39,9 @@ Some features at a glance
 - Uses the enhanced database drivers in the `Grizzled API`_'s ``db``
   module. (Those drivers are, in turn, built on top of standard Python
   DB API drivers like ``psycopg2`` and ``MySQLdb``.)
-- Supports `MySQL`_, `Oracle`_, `PostgreSQL`_, `SQL Server`_ and `SQLite 3`_
-  without customization (though you will have to install Python DB API drivers 
-  for all but SQLite 3).
+- Supports `MySQL`_, `Oracle`_, `PostgreSQL`_, `SQL Server`_ `SQLite 3`_ and
+  Gadfly_ without customization (though you will have to install Python DB API 
+  drivers for all but SQLite 3).
 - Written entirely in `Python`_, which makes it very portable (though the
   Python DB API database drivers are often written in C and may not be available
   on all platforms).
@@ -52,6 +52,7 @@ Some features at a glance
 .. _Oracle: http://www.oracle.com/
 .. _SQL Server: http://www.microsoft.com/sqlserver/
 .. _SQLite 3: http://www.sqlite.org/
+.. _Gadfly: http://gadfly.sourceforge.net/
 
 In short, *sqlcmd* is a SQL command tool that attempts to provide the same
 interface for all supported databases and across all platforms.
@@ -132,7 +133,8 @@ The ``--db`` (or ``-d``) parameter is somewhat complicated. It takes five
 comma-separated parameters, in order:
 
 ``dbname``:
-    The name of the database. (For SQLite, this is the path to the file.)
+    The name of the database. (For SQLite and Gadfly, this is the path to the
+    file.)
 
 ``dbtype``:
     The database type, as defined by the `Grizzled Utility Library`_'s `db`_
@@ -144,15 +146,18 @@ comma-separated parameters, in order:
 
 ``host:port``:
     The host name and port number on which the database server is listening for
-    connections. This field is ignored, and may be empty, for SQLite. The port
-    number may be omitted (i.e., with only the host name specified), and the
-    database driver will use the default port for the database type.
+    connections. This field is ignored, and may be empty, for SQLite and
+    Gadfly. The port number may be omitted (i.e., with only the host name
+    specified), and the database driver will use the default port for the
+    database type.
 
 ``user``:
-    The user to use when authenticating to the database. Ignored for SQLite.
+    The user to use when authenticating to the database. Ignored for SQLite
+    and Gadfly.
 
 ``password``:
-    The password to use when authenticating to the database. Ignored for SQLite.
+    The password to use when authenticating to the database. Ignored for SQLite
+    and Gadfly.
 
 Examples:
 +++++++++
@@ -279,8 +284,8 @@ supports the following parameters.
     |                  | section. (See `below`_.)        |                     |
     +------------------+---------------------------------+---------------------+
     | ``host``         | The host on which the database  | required (but       |
-    |                  | resides. The RDBMS server on    | ignored for SQLite) |
-    |                  | that host must be configured to |                     |
+    |                  | resides. The RDBMS server on    | ignored for SQLite  |
+    |                  | that host must be configured to | and Gadfly)         |
     |                  | accept incoming database client |                     |
     |                  | connections.                    |                     |
     |                  |                                 |                     |
@@ -288,8 +293,8 @@ supports the following parameters.
     |                  | SQLite databases.               |                     |
     +------------------+---------------------------------+---------------------+
     | ``port``         | The port on which the database  | optional (but       |
-    |                  | server is listening. If not     | ignored for SQLite) |
-    |                  | specified, *sqlcmd* uses the    |                     |
+    |                  | server is listening. If not     | ignored for SQLite  |
+    |                  | specified, *sqlcmd* uses the    | and Gadfly)         |
     |                  | default port for the RDBMS      |                     |
     |                  | server (e.g, 1521 for Oracle,   |                     |
     |                  | 1433 for SQL Server, 3306 for   |                     |
@@ -300,14 +305,14 @@ supports the following parameters.
     |                  | SQLite databases.               |                     |
     +------------------+---------------------------------+---------------------+
     | ``user``         | The user to use when            | required (but       |
-    |                  | authenticating to the database. | ignored for SQLite) |
-    |                  |                                 |                     |
+    |                  | authenticating to the database. | ignored for SQLite  |
+    |                  |                                 | and Gadfly)         |
     |                  | This parameter is ignored for   |                     |
     |                  | SQLite databases.               |                     |
     +------------------+---------------------------------+---------------------+
     | ``password``     | The password to use when        | required (but       |
-    |                  | authenticating to the database. | ignored for SQLite) |
-    |                  |                                 |                     |
+    |                  | authenticating to the database. | ignored for SQLite  |
+    |                  |                                 | and Gadfly)         |
     |                  | This parameter is ignored for   |                     |
     |                  | SQLite databases.               |                     |
     +------------------+---------------------------------+---------------------+
@@ -361,6 +366,8 @@ can extend *sqlcmd* to support additional database. See the section on
     +----------------+--------------+-------------------+
     | ``sqlite``     | `SQLite 3`_  | sqlite3 (comes    |
     |                |              | with Python 2.5)  |
+    +----------------+--------------+-------------------+
+    | ``gadfly``     | Gadfly_      | Gadly itself      |
     +----------------+--------------+-------------------+
     
 .. _psycopg2: http://pypi.python.org/pypi/psycopg2/2.0.4
