@@ -1,0 +1,1309 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>sqlcmd: A Cross-platform, Cross-database SQL Command Line Tool</title>
+<meta name="author" content="Brian M. Clapper" />
+<meta name="date" content="$Date$" />
+<meta name="copyright" content="Copyright © 2008 Brian M. Clapper" />
+<style type="text/css">
+
+/*
+:Author: Brian M. Clapper
+:Contact: bmc@clapper.org
+:Copyright: Public domain
+
+Docutils style sheet
+*/
+
+@import url(html4css1.css);
+
+body
+{
+    font-family: sans-serif;
+}
+
+.title
+{
+    font-family: sans-serif;
+}
+
+.subtitle
+{
+    font-style: italic;
+    font-family: sans-serif;
+}
+
+p.topic-title
+{
+    font-size: 200%;
+    font-weight: bold;
+    margin-left: 0em;
+}
+
+div.topic
+{
+    margin: 0em;
+}
+
+tt.docutils
+{
+    background-color: white
+}
+
+pre.literal-block
+{
+    font-family: Andale Mono, Lucidatypewriter, Lucida Typewriter, monospace;
+    font-size: 10pt;
+    width: 80em;
+    background-color: white;
+    /* border: 1px solid black; */
+    padding: 3px;
+}
+
+/* The following are all for Pygments */
+
+div.code-block
+{
+    margin-left: 2em;
+    margin-right: 2em;
+    /* background-color: #eeeeee; */
+    background-color: white;
+    font-family: Andale Mono, Lucidatypewriter, Lucida Typewriter, monospace;
+    font-size: 10pt;
+    width: 80em;
+    /* border: 1px solid black; */
+    padding: 3px;
+}
+
+div.highlight pre span.c
+{
+    color: gray;
+}
+
+div.highlight pre span.k
+{
+    color: blue;
+}
+
+div.highlight pre span.n
+{
+    color: black;
+}
+
+div.highlight pre span.na
+{
+    color: red;
+}
+
+div.highlight pre span.o
+{
+    color: black;
+}
+
+div.highlight pre span.p
+{
+    color: black;
+}
+
+div.highlight pre span.s
+{
+    color: green;
+}
+
+ul.simple li
+{
+    list-style: disc;
+}
+
+</style>
+</head>
+<body>
+<div class="document" id="sqlcmd-a-cross-platform-cross-database-sql-command-line-tool">
+<h1 class="title">sqlcmd: A Cross-platform, Cross-database SQL Command Line Tool</h1>
+<h2 class="subtitle" id="user-s-guide">User's Guide</h2>
+<table class="docinfo" frame="void" rules="none">
+<col class="docinfo-name" />
+<col class="docinfo-content" />
+<tbody valign="top">
+<tr><th class="docinfo-name">Author:</th>
+<td>Brian M. Clapper</td></tr>
+<tr><th class="docinfo-name">Contact:</th>
+<td><a class="first last reference external" href="mailto:bmc&#64;clapper.org">bmc&#64;clapper.org</a></td></tr>
+<tr><th class="docinfo-name">Date:</th>
+<td>$Date$</td></tr>
+<tr class="field"><th class="docinfo-name">Web site:</th><td class="field-body"><a class="reference external" href="http://www.clapper.org/software/python/sqlcmd/">http://www.clapper.org/software/python/sqlcmd/</a></td>
+</tr>
+<tr><th class="docinfo-name">Copyright:</th>
+<td>Copyright © 2008 Brian M. Clapper</td></tr>
+</tbody>
+</table>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#introduction" id="id1">Introduction</a><ul>
+<li><a class="reference internal" href="#some-features-at-a-glance" id="id2">Some features at a glance</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#prerequisites" id="id3">Prerequisites</a></li>
+<li><a class="reference internal" href="#usage" id="id4">Usage</a><ul>
+<li><a class="reference internal" href="#command-line" id="id5">Command Line</a><ul>
+<li><a class="reference internal" href="#options" id="id6">Options</a></li>
+<li><a class="reference internal" href="#parameters" id="id7">Parameters</a></li>
+<li><a class="reference internal" href="#specifying-a-database" id="id8">Specifying a Database</a><ul>
+<li><a class="reference internal" href="#examples" id="id9">Examples:</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#configuration-file" id="id10">Configuration File</a><ul>
+<li><a class="reference internal" href="#a-brief-overview-of-the-configuration-file" id="id11">A Brief Overview of the Configuration File</a></li>
+<li><a class="reference internal" href="#configuration-file-in-depth" id="id12">Configuration File in Depth</a><ul>
+<li><a class="reference internal" href="#the-db-sections" id="id13">The <tt class="docutils literal"><span class="pre">db.</span></tt> Sections</a><ul>
+<li><a class="reference internal" href="#database-types" id="id14">Database Types</a></li>
+<li><a class="reference internal" href="#a-note-about-database-names" id="id15">A Note about Database Names</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-driver-sections" id="id16">The <tt class="docutils literal"><span class="pre">driver.</span></tt> Sections</a></li>
+<li><a class="reference internal" href="#other-sections" id="id17">Other Sections</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#using-sqlcmd" id="id18">Using <em>sqlcmd</em></a><ul>
+<li><a class="reference internal" href="#sql" id="id19">SQL</a><ul>
+<li><a class="reference internal" href="#timings" id="id20">Timings</a></li>
+<li><a class="reference internal" href="#sql-echo" id="id21">SQL Echo</a></li>
+<li><a class="reference internal" href="#comments" id="id22">Comments</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sqlcmd-specific-commands" id="id23"><em>sqlcmd</em>-specific Commands</a><ul>
+<li><a class="reference internal" href="#begin" id="id24"><tt class="docutils literal"><span class="pre">begin</span></tt></a></li>
+<li><a class="reference internal" href="#commit" id="id25"><tt class="docutils literal"><span class="pre">commit</span></tt></a></li>
+<li><a class="reference internal" href="#connect" id="id26"><tt class="docutils literal"><span class="pre">.connect</span></tt></a></li>
+<li><a class="reference internal" href="#describe" id="id27"><tt class="docutils literal"><span class="pre">.describe</span></tt></a></li>
+<li><a class="reference internal" href="#echo" id="id28"><tt class="docutils literal"><span class="pre">.echo</span></tt></a></li>
+<li><a class="reference internal" href="#exit" id="id29"><tt class="docutils literal"><span class="pre">.exit</span></tt></a></li>
+<li><a class="reference internal" href="#history" id="id30"><tt class="docutils literal"><span class="pre">.history</span></tt></a></li>
+<li><a class="reference internal" href="#r-or-redo" id="id31"><tt class="docutils literal"><span class="pre">r</span></tt> or <tt class="docutils literal"><span class="pre">redo</span></tt></a></li>
+<li><a class="reference internal" href="#rollback" id="id32"><tt class="docutils literal"><span class="pre">rollback</span></tt></a></li>
+<li><a class="reference internal" href="#run" id="id33"><tt class="docutils literal"><span class="pre">.run</span></tt></a></li>
+<li><a class="reference internal" href="#set" id="id34"><tt class="docutils literal"><span class="pre">.set</span></tt></a></li>
+<li><a class="reference internal" href="#show" id="id35"><tt class="docutils literal"><span class="pre">.show</span></tt></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#extended-commands" id="id36">Extended Commands</a><ul>
+<li><a class="reference internal" href="#restrictions" id="id37">Restrictions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#command-history" id="id38">Command History</a></li>
+<li><a class="reference internal" href="#command-completion" id="id39">Command Completion</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#license-and-copyright" id="id40">License and Copyright</a></li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h1><a class="toc-backref" href="#id1">Introduction</a></h1>
+<p><em>sqlcmd</em> is a SQL command line tool, similar in concept to tools like Oracle's
+<a class="reference external" href="http://www.oracle.com/technology/docs/tech/sql_plus/index.html">SQL*Plus</a>, the <a class="reference external" href="http://www.postgresql.org/">PostgreSQL</a> <tt class="docutils literal"><span class="pre">psql</span></tt> command, and <a class="reference external" href="http://www.mysql.org/">MySQL</a>'s <tt class="docutils literal"><span class="pre">mysql</span></tt> tool.</p>
+<div class="section" id="some-features-at-a-glance">
+<h2><a class="toc-backref" href="#id2">Some features at a glance</a></h2>
+<ul class="simple">
+<li>Connection parameters for individual databases are kept in a configuration
+file in your home directory.</li>
+<li>Multiple logical names for each database.</li>
+<li>Command history management, with <a class="reference external" href="http://cnswww.cns.cwru.edu/php/chet/readline/rluserman.html">GNU Readline</a> support. Each database
+has its own history file.</li>
+<li>Supports retrieving database metadata (getting a list of tables, querying
+the table's columns and their data types, listing the indexes and foreign
+keys for a table, etc.).</li>
+<li>Standard interface that works the same no matter what database you're using.</li>
+<li>Uses the enhanced database drivers in the <a class="reference external" href="http://www.clapper.org/software/python/grizzled/">Grizzled API</a>'s <tt class="docutils literal"><span class="pre">db</span></tt>
+module. (Those drivers are, in turn, built on top of standard Python
+DB API drivers like <tt class="docutils literal"><span class="pre">psycopg2</span></tt> and <tt class="docutils literal"><span class="pre">MySQLdb</span></tt>.)</li>
+<li>Supports <a class="reference external" href="http://www.mysql.org/">MySQL</a>, <a class="reference external" href="http://www.oracle.com/">Oracle</a>, <a class="reference external" href="http://www.postgresql.org/">PostgreSQL</a>, <a class="reference external" href="http://www.microsoft.com/sqlserver/">SQL Server</a> <a class="reference external" href="http://www.sqlite.org/">SQLite 3</a> and
+<a class="reference external" href="http://gadfly.sourceforge.net/">Gadfly</a> without customization (though you will have to install Python DB API
+drivers for all but SQLite 3).</li>
+<li>Written entirely in <a class="reference external" href="http://www.python.org/">Python</a>, which makes it very portable (though the
+Python DB API database drivers are often written in C and may not be available
+on all platforms).</li>
+</ul>
+<p>In short, <em>sqlcmd</em> is a SQL command tool that attempts to provide the same
+interface for all supported databases and across all platforms.</p>
+</div>
+</div>
+<div class="section" id="prerequisites">
+<h1><a class="toc-backref" href="#id3">Prerequisites</a></h1>
+<p><em>sqlcmd</em> requires the following:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.python.org/">Python</a> 2.5 or better</li>
+<li>The <a class="reference external" href="http://www.clapper.org/software/python/grizzled/">Grizzled API</a> (automatically installed if you use <tt class="docutils literal"><span class="pre">easy_install</span></tt>
+to install <em>sqlcmd</em>)</li>
+<li>The <a class="reference external" href="http://pypi.python.org/pypi/enum/0.4.3">enum</a> package (automatically installed if you use <tt class="docutils literal"><span class="pre">easy_install</span></tt>)</li>
+<li>Appropriate Python DB API drivers for the database(s) you want to use.
+(See <a class="reference internal" href="#database-types">Database Types</a>, below.)</li>
+<li><strong>Windows only</strong>: You'll also want the <em>ipython</em> <tt class="docutils literal"><span class="pre">pyreadline</span></tt> package,
+available via <tt class="docutils literal"><span class="pre">easy_install</span></tt> or from <a class="reference external" href="http://ipython.scipy.org/dist">http://ipython.scipy.org/dist</a></li>
+</ul>
+</div>
+<div class="section" id="usage">
+<h1><a class="toc-backref" href="#id4">Usage</a></h1>
+<p><em>sqlcmd</em> is invoked from the command line. You specify the database either
+via the <tt class="docutils literal"><span class="pre">-d</span></tt> (<tt class="docutils literal"><span class="pre">--database</span></tt>) command line option or, more conveniently,
+in a configuration file. The configuration file allows you to record the
+connection information for multiple databases, then specify a single database
+via a the least number of unique characters necessary to find it in the
+configuration file.</p>
+<div class="section" id="command-line">
+<h2><a class="toc-backref" href="#id5">Command Line</a></h2>
+<p><strong>sqlcmd</strong> [OPTIONS] [<em>alias</em>] [<em>&#64;file</em>]</p>
+<div class="section" id="options">
+<h3><a class="toc-backref" href="#id6">Options</a></h3>
+<blockquote>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>Show a usage message and exit.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-c <var>config</var></span>, <span class="option">--config=<var>config</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Specifies the configuration file to use.
+Defaults to <tt class="docutils literal"><span class="pre">$HOME/.sqlcmd/config</span></tt>.
+Ignored if <tt class="docutils literal"><span class="pre">-d</span></tt> is specified.
+See <a class="reference internal" href="#configuration-file">Configuration File</a>, below, for
+more information on the format of this file.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-d <var>database</var></span>, <span class="option">--db=<var>database</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Database to use. Format:
+<tt class="docutils literal"><span class="pre">dbname,dbtype,host[:port],user,password</span></tt>
+Overrides any specified <em>alias</em>. See
+<a class="reference internal" href="#specifying-a-database">Specifying a Database</a>, below, for a
+complete explanation of this parameter.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-l <var>level</var></span>, <span class="option">--loglevel=<var>level</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Enable log messages as level <em>n</em>, where <em>n</em>
+is one of: <tt class="docutils literal"><span class="pre">debug</span></tt>, <tt class="docutils literal"><span class="pre">info</span></tt>, <tt class="docutils literal"><span class="pre">warning</span></tt>,
+<tt class="docutils literal"><span class="pre">critical</span></tt>, <tt class="docutils literal"><span class="pre">error</span></tt>.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-L <var>logfile</var></span>, <span class="option">--logfile=<var>logfile</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Dump log messages to <em>logfile</em>, instead of
+standard output</td></tr>
+</tbody>
+</table>
+</blockquote>
+</div>
+<div class="section" id="parameters">
+<h3><a class="toc-backref" href="#id7">Parameters</a></h3>
+<ul class="simple">
+<li>The <em>alias</em> parameter identifies an alias for the database in the
+configuration file. It's ignored if the <tt class="docutils literal"><span class="pre">-d</span></tt> option is specified.</li>
+<li>The <em>&#64;file</em> parameter specifies a file of SQL (and <em>sqlcmd</em>) commands to be
+run once <em>sqlcmd</em> has connected to the database. If this parameter is omitted,
+<em>sqlcmd</em> will enter command line mode, prompting on standard input for each
+command.</li>
+</ul>
+</div>
+<div class="section" id="specifying-a-database">
+<h3><a class="toc-backref" href="#id8">Specifying a Database</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">--db</span></tt> (or <tt class="docutils literal"><span class="pre">-d</span></tt>) parameter is somewhat complicated. It takes five
+comma-separated parameters, in order:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">dbname</span></tt>:</dt>
+<dd>The name of the database. (For SQLite and Gadfly, this is the path to the
+file.)</dd>
+<dt><tt class="docutils literal"><span class="pre">dbtype</span></tt>:</dt>
+<dd>The database type, as defined by the <a class="reference external" href="http://www.clapper.org/software/python/grizzled/">Grizzled Utility Library</a>'s <a class="reference external" href="http://www.clapper.org/software/python/grizzled/epydoc/grizzled.db-module.html">db</a>
+package, <tt class="docutils literal"><span class="pre">oracle</span></tt>,``sqlserver``, <tt class="docutils literal"><span class="pre">mysql</span></tt>, <tt class="docutils literal"><span class="pre">postgresql</span></tt> and
+<tt class="docutils literal"><span class="pre">sqlite</span></tt>. Additional database types can be added, however; see
+<a class="reference internal" href="#configuration-file">below</a>.</dd>
+</dl>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">host:port</span></tt>:</dt>
+<dd>The host name and port number on which the database server is listening for
+connections. This field is ignored, and may be empty, for SQLite and
+Gadfly. The port number may be omitted (i.e., with only the host name
+specified), and the database driver will use the default port for the
+database type.</dd>
+<dt><tt class="docutils literal"><span class="pre">user</span></tt>:</dt>
+<dd>The user to use when authenticating to the database. Ignored for SQLite
+and Gadfly.</dd>
+<dt><tt class="docutils literal"><span class="pre">password</span></tt>:</dt>
+<dd>The password to use when authenticating to the database. Ignored for SQLite
+and Gadfly.</dd>
+</dl>
+<div class="section" id="examples">
+<h4><a class="toc-backref" href="#id9">Examples:</a></h4>
+<p>Connect to a SQLite database residing in file <tt class="docutils literal"><span class="pre">/tmp/test.db</span></tt>:</p>
+<pre class="literal-block">
+sqlcmd -d /tmp/test.db,sqlite,,,
+</pre>
+<p>Connect to an Oracle database named &quot;customers&quot; on host <tt class="docutils literal"><span class="pre">db.example.com</span></tt>,
+using user &quot;scott&quot; and password &quot;tiger&quot;:</p>
+<pre class="literal-block">
+sqlcmd -d customers,oracle,db.example.com,scott,tiger
+</pre>
+<p>Connect to a PostgreSQL database named &quot;mydb&quot; on the current host, using user
+&quot;psql&quot; and password &quot;foo.bar&quot;:</p>
+<pre class="literal-block">
+sqlcmd -d mydb,postgresql,localhost,psql,foo.bar
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="configuration-file">
+<h1><a class="toc-backref" href="#id10">Configuration File</a></h1>
+<p>Specifying the database connection parameters on the command line is both
+tedious and error prone, even with a good shell history mechanism. So,
+<em>sqlcmd</em> permits you to store your database connection information in a
+configuration file.</p>
+<div class="section" id="a-brief-overview-of-the-configuration-file">
+<h2><a class="toc-backref" href="#id11">A Brief Overview of the Configuration File</a></h2>
+<p>Things will be a little clearer if we look at a sample configuration file.
+The following file specifies the same databases as in the examples, above:</p>
+<div class="code-block ini">
+<div class="highlight"><pre><span class="c"># sqlcmd initialization file</span>
+
+<span class="k">[db.testdb]</span>
+<span class="na">names</span><span class="o">=</span><span class="s">sqlite, test</span>
+<span class="na">database</span><span class="o">=</span><span class="s">/tmp/test.db</span>
+<span class="na">type</span><span class="o">=</span><span class="s">sqlite</span>
+
+<span class="k">[db.customers]</span>
+<span class="na">names</span><span class="o">=</span><span class="s">oracle</span>
+<span class="na">database</span><span class="o">=</span><span class="s">customers</span>
+<span class="na">type</span><span class="o">=</span><span class="s">oracle</span>
+<span class="na">host</span><span class="o">=</span><span class="s">db.example.com</span>
+<span class="na">user</span><span class="o">=</span><span class="s">scott</span>
+<span class="na">password</span><span class="o">=</span><span class="s">tiger</span>
+
+<span class="k">[db.mydb]</span>
+<span class="na">names</span><span class="o">=</span><span class="s">postgres</span>
+<span class="na">database</span><span class="o">=</span><span class="s">mydb</span>
+<span class="na">type</span><span class="o">=</span><span class="s">postgresql</span>
+<span class="na">host</span><span class="o">=</span><span class="s">localhost</span>
+<span class="na">user</span><span class="o">=</span><span class="s">psql</span>
+<span class="na">password</span><span class="o">=</span><span class="s">foo.bar</span>
+</pre></div>
+
+</div>
+<p>Now, if you store that file in <tt class="docutils literal"><span class="pre">$HOME/.sqlcmd/config</span></tt> (the default place
+<em>sqlcmd</em> searches for it), connecting to each of the databases is much simpler:</p>
+<div class="code-block bash">
+<div class="highlight"><pre><span class="nv">$ </span>sqlcmd testdb
+<span class="nv">$ </span>sqlcmd customers
+<span class="nv">$ </span>sqlcmd mydb
+</pre></div>
+
+</div>
+<p>You can store the file somewhere else, of course; you just have to tell
+<em>sqlcmd</em> where it is:</p>
+<div class="code-block bash">
+<div class="highlight"><pre><span class="nv">$ </span>sqlcmd -c /usr/local/etc/sqlcmd.cfg testdb
+<span class="nv">$ </span>sqlcmd -c /usr/local/etc/sqlcmd.cfg customers
+<span class="nv">$ </span>sqlcmd -c /usr/local/etc/sqlcmd.cfg mydb
+</pre></div>
+
+</div>
+<p>See the next section for details on the specific sections and options in the
+<em>sqlcmd</em> configuration file.</p>
+</div>
+<div class="section" id="configuration-file-in-depth">
+<h2><a class="toc-backref" href="#id12">Configuration File in Depth</a></h2>
+<p>A <em>sqlcmd</em> configuration file, typically stored in <tt class="docutils literal"><span class="pre">$HOME/.sqlcmd/config</span></tt>,
+is an INI-style file divided into logical sections. Each of those sections
+is described below. All section names must be unique within the file.</p>
+<p>Blank lines and comment lines are ignored; comment lines start with a &quot;#&quot;
+character.</p>
+<p><em>sqlcmd</em> uses the <a class="reference external" href="http://www.clapper.org/software/python/grizzled/">Grizzled API</a>'s <a class="reference external" href="http://www.clapper.org/software/python/grizzled/epydoc/grizzled.config.Configuration-class.html">grizzled.config.Configuration</a>
+class to parse the file; that class is, in turn, an enhancement of the standard
+Python <a class="reference external" href="http://docs.python.org/lib/module-ConfigParser.html">ConfigParser</a> class.</p>
+<p>Because <em>sqlcmd</em> uses the Grizzled API's <tt class="docutils literal"><span class="pre">Configuration</span></tt> class, you can use
+include directives and variable substitution in the configuration file, if
+you with. See the <a class="reference external" href="http://www.clapper.org/software/python/grizzled/epydoc/grizzled.config.Configuration-class.html">grizzled.config.Configuration</a> documentation for more
+details.</p>
+<div class="section" id="the-db-sections">
+<h3><a class="toc-backref" href="#id13">The <tt class="docutils literal"><span class="pre">db.</span></tt> Sections</a></h3>
+<p>A <tt class="docutils literal"><span class="pre">db.</span></tt> section contains the connection definition for a particular database.
+The <tt class="docutils literal"><span class="pre">db.</span></tt> prefix must be followed by the primary name of the database.
+Multiple <tt class="docutils literal"><span class="pre">db.</span></tt> sections can exist in the configuration file; each section
+supports the following parameters.</p>
+<blockquote>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="46%" />
+<col width="29%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Parameter Name</th>
+<th class="head">Description</th>
+<th class="head">Required/Optional</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td rowspan="2"><tt class="docutils literal"><span class="pre">database</span></tt></td>
+<td rowspan="2">The name of the database, as
+known by the RDBMS engine.</td>
+<td rowspan="2">required</td>
+</tr>
+<tr></tr>
+<tr><td><tt class="docutils literal"><span class="pre">type</span></tt></td>
+<td>The type of the database. This
+value must be recognized by the
+Grizzled API's <tt class="docutils literal"><span class="pre">db</span></tt> module.
+That means it must identify a
+database driver that is part of
+the <tt class="docutils literal"><span class="pre">grizzled.db</span></tt> package, or
+it must be a driver you specify
+yourself, in a <tt class="docutils literal"><span class="pre">driver.</span></tt>
+section. (See <a class="reference internal" href="#configuration-file">below</a>.)</td>
+<td>required</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">host</span></tt></td>
+<td><p class="first">The host on which the database
+resides. The RDBMS server on
+that host must be configured to
+accept incoming database client
+connections.</p>
+<p class="last">This parameter is ignored for
+SQLite databases.</p>
+</td>
+<td>required (but
+ignored for SQLite
+and Gadfly)</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">port</span></tt></td>
+<td><p class="first">The port on which the database
+server is listening. If not
+specified, <em>sqlcmd</em> uses the
+default port for the RDBMS
+server (e.g, 1521 for Oracle,
+1433 for SQL Server, 3306 for
+MYSQL, 5432 for PostgreSQL,
+etc.).</p>
+<p class="last">This parameter is ignored for
+SQLite databases.</p>
+</td>
+<td>optional (but
+ignored for SQLite
+and Gadfly)</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">user</span></tt></td>
+<td><p class="first">The user to use when
+authenticating to the database.</p>
+<p class="last">This parameter is ignored for
+SQLite databases.</p>
+</td>
+<td>required (but
+ignored for SQLite
+and Gadfly)</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">password</span></tt></td>
+<td><p class="first">The password to use when
+authenticating to the database.</p>
+<p class="last">This parameter is ignored for
+SQLite databases.</p>
+</td>
+<td>required (but
+ignored for SQLite
+and Gadfly)</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">aliases</span></tt></td>
+<td>A comma-separated list of alias
+names for the database. This
+list allows you to refer to the
+database by multiple names</td>
+<td>optional</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">onconnect</span></tt></td>
+<td><p class="first">Path to a script of commands to
+run just after connecting to
+database. The file can contain
+any valid <em>sqlcmd</em> command
+(including, obviously, SQL).</p>
+<p>Any leading &quot;~&quot; in the path is
+expanding to the home directory
+of the user running <em>sqlcmd</em>.
+Relative paths are assumed to
+be relative to the directory
+containing the configuration
+file.</p>
+<p class="last"><em>Hint</em>: Specify the path using
+Unix-style forward slashes,
+even on Windows, to avoid
+problems with backslashes.</p>
+</td>
+<td>optional</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+<div class="section" id="database-types">
+<h4><a class="toc-backref" href="#id14">Database Types</a></h4>
+<p>The following database types are supported automatically, provided you have
+the right underlying Python database drivers installed. As noted above, you
+can extend <em>sqlcmd</em> to support additional database. See the section on
+<a class="reference internal" href="#dot-driver">.driver</a>, below, for details.</p>
+<blockquote>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="29%" />
+<col width="39%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Type name used
+with <em>sqlcmd</em></th>
+<th class="head">Database</th>
+<th class="head">Python DB API
+module</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">mysql</span></tt></td>
+<td><a class="reference external" href="http://www.mysql.org/">MySQL</a></td>
+<td><a class="reference external" href="http://sourceforge.net/projects/mysql-python">MySQLdb</a></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">oracle</span></tt></td>
+<td><a class="reference external" href="http://www.oracle.com/">Oracle</a></td>
+<td><a class="reference external" href="http://python.net/crew/atuining/cx_Oracle/">cx_Oracle</a></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">postgresql</span></tt></td>
+<td><a class="reference external" href="http://www.postgresql.org/">PostgreSQL</a></td>
+<td><a class="reference external" href="http://pypi.python.org/pypi/psycopg2/2.0.4">psycopg2</a></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">sqlserver</span></tt></td>
+<td>Microsoft
+<a class="reference external" href="http://www.microsoft.com/sqlserver/">SQL Server</a></td>
+<td><a class="reference external" href="http://pymssql.sourceforge.net/">pymssql</a></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">sqlite</span></tt></td>
+<td><a class="reference external" href="http://www.sqlite.org/">SQLite 3</a></td>
+<td>sqlite3 (comes
+with Python 2.5)</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">gadfly</span></tt></td>
+<td><a class="reference external" href="http://gadfly.sourceforge.net/">Gadfly</a></td>
+<td>Gadly itself</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+</div>
+<div class="section" id="a-note-about-database-names">
+<h4><a class="toc-backref" href="#id15">A Note about Database Names</a></h4>
+<p>When you specify the name of a database on the <em>sqlcmd</em> command line,
+<em>sqlcmd</em> attempts to match that name against the names of all databases in
+the configuration file. <em>sqlcmd</em> compares the name you specify against the
+following values from each <tt class="docutils literal"><span class="pre">db.</span></tt> configuration section:</p>
+<ul class="simple">
+<li>The section name, minus the <tt class="docutils literal"><span class="pre">db.</span></tt> prefix. This is the primary name of
+the database, from <em>sqlcmd</em>'s perspective.</li>
+<li>The value of the <tt class="docutils literal"><span class="pre">database</span></tt> option.</li>
+<li>The value or values of the <tt class="docutils literal"><span class="pre">aliases</span></tt> option.</li>
+</ul>
+<p>You only need to specify as many characters as are
+necessary to uniquely identify the database.</p>
+<p>Thus, given this configuration file:</p>
+<div class="code-block ini">
+<div class="highlight"><pre><span class="k">[db.testdb]</span>
+<span class="na">names</span><span class="o">=</span><span class="s">sqlite, test</span>
+<span class="na">database</span><span class="o">=</span><span class="s">/tmp/test.db</span>
+<span class="na">type</span><span class="o">=</span><span class="s">sqlite</span>
+
+<span class="k">[db.customers]</span>
+<span class="na">names</span><span class="o">=</span><span class="s">oracle, custdb</span>
+<span class="na">database</span><span class="o">=</span><span class="s">cust001</span>
+<span class="na">type</span><span class="o">=</span><span class="s">oracle</span>
+<span class="na">host</span><span class="o">=</span><span class="s">db.example.com</span>
+<span class="na">user</span><span class="o">=</span><span class="s">scott</span>
+<span class="na">password</span><span class="o">=</span><span class="s">tiger</span>
+</pre></div>
+
+</div>
+<p>You can connect to the <tt class="docutils literal"><span class="pre">customers</span></tt> database using any of the following
+names:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">customers</span></tt>: the section name, minus <tt class="docutils literal"><span class="pre">db.</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">custdb</span></tt>: one of the aliases</li>
+<li><tt class="docutils literal"><span class="pre">oracle</span></tt>: the other alias</li>
+<li><tt class="docutils literal"><span class="pre">cust001</span></tt>: the actual database name, from the <tt class="docutils literal"><span class="pre">database</span></tt> option</li>
+<li><tt class="docutils literal"><span class="pre">cust</span></tt>: a unique abbreviation of <tt class="docutils literal"><span class="pre">customers</span></tt> or <tt class="docutils literal"><span class="pre">cust001</span></tt></li>
+</ul>
+</div>
+</div>
+<div class="section" id="the-driver-sections">
+<span id="dot-driver"></span><h3><a class="toc-backref" href="#id16">The <tt class="docutils literal"><span class="pre">driver.</span></tt> Sections</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">driver.</span></tt> section allows you to install additional enhanced database
+drivers, beyond those that are built into the <a class="reference external" href="http://www.clapper.org/software/python/grizzled/">Grizzled API</a>'s <tt class="docutils literal"><span class="pre">db</span></tt>
+package.</p>
+<p>An enhanced driver must extend the <tt class="docutils literal"><span class="pre">grizzled.db.DBDriver</span></tt> class and provide
+the appropriate methods. See the <a class="reference external" href="http://www.clapper.org/software/python/grizzled/epydoc/grizzled.db-module.html">appropriate Grizzled documentation</a> for
+details. If you want to write your own driver, the Grizzled source code is
+invaluable.</p>
+<p>The <tt class="docutils literal"><span class="pre">driver.</span></tt> section supports the following options:</p>
+<blockquote>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="46%" />
+<col width="29%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Parameter Name</th>
+<th class="head">Description</th>
+<th class="head">Required/Optional</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td rowspan="2"><tt class="docutils literal"><span class="pre">class</span></tt></td>
+<td rowspan="2">The fully-qualified name of the
+driver class, including any
+package and/or module name.</td>
+<td rowspan="2">required</td>
+</tr>
+<tr></tr>
+<tr><td><tt class="docutils literal"><span class="pre">name</span></tt></td>
+<td>The logical name to use for the
+driver.</td>
+<td>required</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+<p>For example, suppose you wrote a driver to connect to the <a class="reference external" href="http://db.apache.org/derby/">Apache Derby</a>
+database (perhaps using <a class="reference external" href="http://jpype.sourceforge.net/">JPype</a>). Let's further suppose that the driver is
+implemented by a Python class called <tt class="docutils literal"><span class="pre">DerbyDriver</span></tt> (which extends the
+Grizzled <tt class="docutils literal"><span class="pre">DBDriver</span></tt> class) and resides in module <tt class="docutils literal"><span class="pre">mycode.db</span></tt>. You could
+use the following <em>sqlcmd</em> configuration section to make <em>sqlcmd</em> aware of
+that driver:</p>
+<div class="code-block ini">
+<div class="highlight"><pre><span class="k">[driver.derby]</span>
+<span class="na">class</span><span class="o">=</span><span class="s">mycode.db.DerbyDriver</span>
+<span class="na">name</span><span class="o">=</span><span class="s">derby</span>
+</pre></div>
+
+</div>
+<p>With that section in the configuration file, you can now use the value <tt class="docutils literal"><span class="pre">derby</span></tt>
+for the <tt class="docutils literal"><span class="pre">type</span></tt> parameter in any <tt class="docutils literal"><span class="pre">db.</span></tt> section.</p>
+<p>Obviously, the appropriate supporting Python (and other) code must be available
+to <em>sqlcmd</em>, by setting <tt class="docutils literal"><span class="pre">PYTHONPATH</span></tt>, <tt class="docutils literal"><span class="pre">LD_LIBRARY_PATH</span></tt>, and/or <tt class="docutils literal"><span class="pre">PATH</span></tt>,
+as appropriate for your operating system.</p>
+</div>
+<div class="section" id="other-sections">
+<h3><a class="toc-backref" href="#id17">Other Sections</a></h3>
+<p><em>sqlcmd</em> quietly ignores any other sections in the configuration file. One
+possible use for other sections is as holders for common variable definitions
+that are substituted in other places in the file. For instance, suppose all
+your database engine happen to be on the same host and happen to use the same
+user name and password. To share that common configuration information, you
+might do something like the following:</p>
+<div class="code-block ini">
+<div class="highlight"><pre><span class="k">[defs]</span>
+<span class="c"># Shared definitions</span>
+<span class="na">dbhost</span><span class="o">=</span><span class="s">db.example.com</span>
+<span class="na">admin_user</span><span class="o">=</span><span class="s">admin</span>
+<span class="na">admin_password</span><span class="o">=</span><span class="s">foo.bar</span>
+
+<span class="k">[db.testdb]</span>
+<span class="na">names</span><span class="o">=</span><span class="s">sqlite, test</span>
+<span class="na">database</span><span class="o">=</span><span class="s">/tmp/test.db</span>
+<span class="na">type</span><span class="o">=</span><span class="s">sqlite</span>
+
+<span class="k">[db.customers]</span>
+<span class="na">names</span><span class="o">=</span><span class="s">oracle</span>
+<span class="na">database</span><span class="o">=</span><span class="s">customers</span>
+<span class="na">type</span><span class="o">=</span><span class="s">oracle</span>
+<span class="na">host</span><span class="o">=</span><span class="s">${dbhost}</span>
+<span class="na">user</span><span class="o">=</span><span class="s">${admin_user}</span>
+<span class="na">password</span><span class="o">=</span><span class="s">${admin_password}</span>
+
+<span class="k">[db.mydb]</span>
+<span class="na">names</span><span class="o">=</span><span class="s">postgres</span>
+<span class="na">database</span><span class="o">=</span><span class="s">mydb</span>
+<span class="na">type</span><span class="o">=</span><span class="s">postgresql</span>
+<span class="na">host</span><span class="o">=</span><span class="s">${dbhost}</span>
+<span class="na">user</span><span class="o">=</span><span class="s">${admin_user}</span>
+<span class="na">password</span><span class="o">=</span><span class="s">${admin_password}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="using-sqlcmd">
+<h1><a class="toc-backref" href="#id18">Using <em>sqlcmd</em></a></h1>
+<p>When run in interactive mode (i.e., without an <em>&#64;file</em> <a class="reference internal" href="#parameters">parameter</a>), <em>sqlcmd</em>
+prompts on standard input with a &quot;?&quot; and waits for commands to be entered,
+executing each one as it's entered. It continues to prompt for commands until
+either:</p>
+<ul class="simple">
+<li>it encounters an end-of-file condition (Ctrl-D on Unix systems, Ctrl-Z
+on Windows), or</li>
+<li>you type the <tt class="docutils literal"><span class="pre">.exit</span></tt> command.</li>
+</ul>
+<p>Some commands (e.g., all SQL commands, and some others) are not executed until
+a final &quot;;&quot; character is seen on the input; this permits multi-line commands.
+Other commands, such as internal commands like <tt class="docutils literal"><span class="pre">.set</span></tt>, are single-line
+commands and do not require a semi-colon.</p>
+<p>Before going into each specific type of command, here's a brief <em>sqlcmd</em>
+transcript, to whet your appetite:</p>
+<div class="code-block text">
+<div class="highlight"><pre>$ sqlcmd mydb
+SQLCmd, version 0.3 ($Revision$)
+Copyright 2008 Brian M. Clapper.
+
+Type &quot;help&quot; or &quot;?&quot; for help.
+
+Connecting to MySQL database &quot;mydb&quot; on host localhost.
+Using readline for history management.
+Loading history file &quot;/home/bmc/.sqlcmd/mydb.hist&quot;
+? .set
+autocommit = true
+binarymax  = 20
+echo       = false
+showbinary = false
+stacktrace = false
+timings    = true
+? .show tables;
+users
+customers
+? .desc users
+-----------
+Table users
+-----------
+id             bigint NOT NULL
+companyid      bigint NOT NULL
+lastname       character varying(254) NOT NULL
+firstname      character varying(254) NOT NULL
+middleinitial  character(1) NULL
+username       character varying(30) NOT NULL
+password       character varying(64) NOT NULL
+email          character varying(254) NOT NULL
+telephone      character varying(30) NULL
+department     character varying(254) NULL
+isenabled      character(1) NOT NULL
+? select id, companyid, lastname, firstname, middleinitial, username, email from etuser;
+Execution time: 0.092 seconds
+2 rows
+
+id companyid lastname firstname middleinitial username email
+-- --------- -------- --------- ------------- -------- ---------------
+ 1         1 Clapper  Brian     M             bmc      bmc@clapper.org
+ 2         1 User     Joe       NULL          joe      joe@example.org
+</pre></div>
+
+</div>
+<div class="section" id="sql">
+<h2><a class="toc-backref" href="#id19">SQL</a></h2>
+<p><em>sqlcmd</em> will issue any valid SQL command. It does not interpret the SQL
+command at all, beyond recognizing the initial <tt class="docutils literal"><span class="pre">SELECT</span></tt>, <tt class="docutils literal"><span class="pre">INSERT</span></tt>,
+<tt class="docutils literal"><span class="pre">UPDATE</span></tt>, etc., statement. Thus, RDBMS-specific SQL is perfectly permissable.</p>
+<p>For SQL commands that produce results, such as <tt class="docutils literal"><span class="pre">SELECT</span></tt>, <em>sqlcmd</em> displays
+the result in a tabular form, using as little horizontal real estate as possible.
+It does <strong>not</strong> wrap its output, however.</p>
+<p><em>sqlcmd</em> has explicit support for the following kinds of SQL statements.
+Note that &quot;explicit support&quot; means <em>sqlcmd</em> can do table-name completion
+for those commands (see <a class="reference internal" href="#command-completion">Command Completion</a>), not that <em>sqlcmd</em> understands
+the SQL syntax.</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">ALTER</span></tt> (e.g., <tt class="docutils literal"><span class="pre">ALTER</span> <span class="pre">TABLE</span></tt>, <tt class="docutils literal"><span class="pre">ALTER</span> <span class="pre">INDEX</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">CREATE</span></tt> (e.g., <tt class="docutils literal"><span class="pre">CREATE</span> <span class="pre">TABLE</span></tt>, <tt class="docutils literal"><span class="pre">CREATE</span> <span class="pre">INDEX</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">DELETE</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">DROP</span></tt> (e.g., <tt class="docutils literal"><span class="pre">DROP</span> <span class="pre">TABLE</span></tt>, <tt class="docutils literal"><span class="pre">DROP</span> <span class="pre">INDEX</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">INSERT</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">UPDATE</span></tt></li>
+</ul>
+<div class="section" id="timings">
+<h3><a class="toc-backref" href="#id20">Timings</a></h3>
+<p>By default, <em>sqlcmd</em> times how long it takes to execute a SQL statement
+and prints the resulting times on the screen. To suppress this behavior,
+set the <tt class="docutils literal"><span class="pre">timings</span></tt> variable to <tt class="docutils literal"><span class="pre">false</span></tt>:</p>
+<div class="code-block text">
+<div class="highlight"><pre>.set timings false
+</pre></div>
+
+</div>
+</div>
+<div class="section" id="sql-echo">
+<h3><a class="toc-backref" href="#id21">SQL Echo</a></h3>
+<p>By default, <em>sqlcmd</em> does <em>not</em> echo commands to the screen. That's a
+reasonable behavior when you're using <em>sqlcmd</em> interactively. However, when
+you're loading a file full of <em>sqlcmd</em> statements, you might want each
+statement to be echoed before it is run. To enable command echo, set the
+<tt class="docutils literal"><span class="pre">echo</span></tt> variable to <tt class="docutils literal"><span class="pre">true</span></tt>:</p>
+<div class="code-block text">
+<div class="highlight"><pre>.set echo true
+</pre></div>
+
+</div>
+</div>
+<div class="section" id="comments">
+<h3><a class="toc-backref" href="#id22">Comments</a></h3>
+<p><em>sqlcmd</em> honors (and ignores) SQL comments, as long as each comment is on a
+line by itself. A SQL comment begins with &quot;--&quot;.</p>
+<p>Example of support syntax:</p>
+<div class="code-block text">
+<div class="highlight"><pre>-- This is a SQL comment.
+-- And so is this.
+</pre></div>
+
+</div>
+<p>Example of <em>unsupported</em> syntax:</p>
+<div class="code-block sql">
+<div class="highlight"><pre><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">foo</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="c1">-- initialize foo</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+<div class="section" id="sqlcmd-specific-commands">
+<h2><a class="toc-backref" href="#id23"><em>sqlcmd</em>-specific Commands</a></h2>
+<p>These internal <em>sqlcmd</em> commands are one-line commands that do not require
+a trailing semi-colon and cannot be on multiple lines. Most (but not all)
+of these commands start with a dot (&quot;.&quot;) character, to distinguish them
+from commands that are processed by the connected database engine.</p>
+<div class="section" id="begin">
+<h3><a class="toc-backref" href="#id24"><tt class="docutils literal"><span class="pre">begin</span></tt></a></h3>
+<p>Start a new transaction. This command is not permitted unless <tt class="docutils literal"><span class="pre">autocommit</span></tt>
+is <tt class="docutils literal"><span class="pre">true</span></tt>. (See <a class="reference internal" href="#set">.set</a>) <tt class="docutils literal"><span class="pre">begin</span></tt> is essentially a no-op: It's ignored in
+autocommit mode, and irrelevant when autocommit mode is off. It's there
+primarily for SQL scripts.</p>
+<p>Example of use:</p>
+<div class="code-block sql">
+<div class="highlight"><pre><span class="k">begin</span>
+<span class="k">update</span> <span class="n">foo</span> <span class="k">set</span> <span class="n">bar</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="k">commit</span>
+</pre></div>
+
+</div>
+<p>For compatibility with SQL scripts, this command does not begin with a &quot;.&quot;.</p>
+<p>See also:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#set">.set</a></li>
+<li><a class="reference internal" href="#commit">commit</a></li>
+<li><a class="reference internal" href="#rollback">rollback</a></li>
+</ul>
+</div>
+<div class="section" id="commit">
+<h3><a class="toc-backref" href="#id25"><tt class="docutils literal"><span class="pre">commit</span></tt></a></h3>
+<p>Commit the current transaction. Ignored if <tt class="docutils literal"><span class="pre">autocommit</span></tt> is enabled. For
+compatibility with SQL scripts, this command does not begin with a &quot;.&quot;.</p>
+<p>See also:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#set">.set</a></li>
+<li><a class="reference internal" href="#begin">begin</a></li>
+<li><a class="reference internal" href="#rollback">rollback</a></li>
+</ul>
+</div>
+<div class="section" id="connect">
+<h3><a class="toc-backref" href="#id26"><tt class="docutils literal"><span class="pre">.connect</span></tt></a></h3>
+<p>The <tt class="docutils literal"><span class="pre">.connect</span></tt> command closes the current database connection and opens
+a new one to a (possibly) different database. The general form of the command
+is:</p>
+<div class="code-block text">
+<div class="highlight"><pre>.connect dbname
+</pre></div>
+
+</div>
+<p><em>dbname</em> is a database name from the configuration file. When it first starts
+running, <em>sqlcmd</em> issues an implicit <tt class="docutils literal"><span class="pre">.connect</span></tt> to the database specified
+on the command line.</p>
+</div>
+<div class="section" id="describe">
+<h3><a class="toc-backref" href="#id27"><tt class="docutils literal"><span class="pre">.describe</span></tt></a></h3>
+<p>The <tt class="docutils literal"><span class="pre">.describe</span></tt> command, which can be abbreviated <tt class="docutils literal"><span class="pre">.desc</span></tt>, is used to
+describe a table. The general form of the command is:</p>
+<div class="code-block text">
+<div class="highlight"><pre>.describe tablename [full]
+</pre></div>
+
+</div>
+<p>If &quot;full&quot; is not specified, then <em>sqlcmd</em> prints a simple description of the
+table and its columns. For instance:</p>
+<div class="code-block text">
+<div class="highlight"><pre>? .desc users
+-----------
+Table users
+-----------
+id             bigint NOT NULL
+companyid      bigint NOT NULL
+lastname       character varying(254) NOT NULL
+firstname      character varying(254) NOT NULL
+middleinitial  character(1) NULL
+username       character varying(30) NOT NULL
+password       character varying(64) NOT NULL
+email          character varying(254) NOT NULL
+telephone      character varying(30) NULL
+department     character varying(254) NULL
+isenabled      character(1) NOT NULL
+</pre></div>
+
+</div>
+<p>If &quot;full&quot; is specified, <em>sqlcmd</em> also gathers and displays information about
+the table's indexes. For example:</p>
+<div class="code-block text">
+<div class="highlight"><pre>? .desc users
+-----------
+Table users
+-----------
+id             bigint NOT NULL
+companyid      bigint NOT NULL
+lastname       character varying(254) NOT NULL
+firstname      character varying(254) NOT NULL
+middleinitial  character(1) NULL
+username       character varying(30) NOT NULL
+password       character varying(64) NOT NULL
+email          character varying(254) NOT NULL
+telephone      character varying(30) NULL
+department     character varying(254) NULL
+isenabled      character(1) NOT NULL
+
+--------
+Indexes:
+--------
+
+userpk1 Columns:     (id)
+        Description: (PRIMARY) Unique, non-clustered btree index
+----------------------------------------------------------------------------
+userak1 Columns:     (companyid, username)
+        Description: Unique, non-clustered btree index
+</pre></div>
+
+</div>
+</div>
+<div class="section" id="echo">
+<h3><a class="toc-backref" href="#id28"><tt class="docutils literal"><span class="pre">.echo</span></tt></a></h3>
+<p>Echoes all remaining arguments to standard output. This command is useful
+primarily in scripts.</p>
+<p>Example:</p>
+<div class="code-block text">
+<div class="highlight"><pre>.echo Don&#39;t look now, but I&#39;m about to run SELECT
+</pre></div>
+
+</div>
+</div>
+<div class="section" id="exit">
+<h3><a class="toc-backref" href="#id29"><tt class="docutils literal"><span class="pre">.exit</span></tt></a></h3>
+<p>Exit <em>sqlcmd</em>. <tt class="docutils literal"><span class="pre">.exit</span></tt> is equivalent to typing the key sequence corresponding
+to an end-of-file condition (Ctrl-D on Unix systems, Ctrl-Z on Windows).</p>
+</div>
+<div class="section" id="history">
+<h3><a class="toc-backref" href="#id30"><tt class="docutils literal"><span class="pre">.history</span></tt></a></h3>
+<p><tt class="docutils literal"><span class="pre">.history</span></tt> displays the command history. See <a class="reference internal" href="#command-history">Command History</a> for a
+complete explanation of <em>sqlcmd</em>'s command history capabilities.</p>
+</div>
+<div class="section" id="r-or-redo">
+<h3><a class="toc-backref" href="#id31"><tt class="docutils literal"><span class="pre">r</span></tt> or <tt class="docutils literal"><span class="pre">redo</span></tt></a></h3>
+<p>Re-issue a command from the history. General usage:</p>
+<div class="code-block text">
+<div class="highlight"><pre>r [num|str]
+redo [num|str]
+</pre></div>
+
+</div>
+<p>If <em>num</em> is present, it is the number of the command to re-run. If <em>str</em>
+is specified, the most recent command that <em>str</em> (using a substring match)
+is re-run.</p>
+<p>For example, consider this history:</p>
+<div class="code-block text">
+<div class="highlight"><pre>? .history
+   1: .show tables;
+   2: select * from foo;
+   3: .desc foo;
+   4: .desc foobar;
+</pre></div>
+
+</div>
+<p>Here are various <tt class="docutils literal"><span class="pre">redo</span></tt> invocations:</p>
+<div class="code-block text">
+<div class="highlight"><pre>? r 1  &lt;--- re-runs command 1, &quot;.show tables&quot;
+? r s  &lt;--- re-runs the most recent command that starts with &quot;s&quot;, which is &quot;select * from foo&quot;
+? r    &lt;--- re-runs the last command, &quot;.desc foobar&quot;
+</pre></div>
+
+</div>
+</div>
+<div class="section" id="rollback">
+<h3><a class="toc-backref" href="#id32"><tt class="docutils literal"><span class="pre">rollback</span></tt></a></h3>
+<p>Roll the current transaction back. Ignored if <tt class="docutils literal"><span class="pre">autocommit</span></tt> is enabled. For
+compatibility with SQL scripts, this command does not begin with a &quot;.&quot;.</p>
+<p>See also:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#set">.set</a></li>
+<li><a class="reference internal" href="#begin">begin</a></li>
+<li><a class="reference internal" href="#commit">commit</a></li>
+</ul>
+</div>
+<div class="section" id="run">
+<h3><a class="toc-backref" href="#id33"><tt class="docutils literal"><span class="pre">.run</span></tt></a></h3>
+<p>Loads an external file of commands (typically SQL) and runs those commands in
+the current session <em>without exiting</em>. After the commands are run, <em>sqlcmd</em>
+returns to its interactive prompt. <tt class="docutils literal"><span class="pre">.run</span></tt> can also be invoked as <tt class="docutils literal"><span class="pre">.load</span></tt>.</p>
+<div class="code-block text">
+<div class="highlight"><pre>.run path
+.load path
+</pre></div>
+
+</div>
+<p>Both commands do exactly the same thing.</p>
+</div>
+<div class="section" id="set">
+<h3><a class="toc-backref" href="#id34"><tt class="docutils literal"><span class="pre">.set</span></tt></a></h3>
+<p>The <tt class="docutils literal"><span class="pre">.set</span></tt> command displays or alters internal <em>sqlcmd</em> variables. Without
+any parameters, <tt class="docutils literal"><span class="pre">.set</span></tt> displays all internal variables and their values:</p>
+<div class="code-block text">
+<div class="highlight"><pre>? .set
+autocommit = true
+binarymax  = 20
+echo       = true
+showbinary = false
+stacktrace = false
+timings    = true
+</pre></div>
+
+</div>
+<p>The supported variables are:</p>
+<blockquote>
+<table border="1" class="docutils">
+<colgroup>
+<col width="23%" />
+<col width="63%" />
+<col width="14%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Variable</th>
+<th class="head">Meaning</th>
+<th class="head">Default</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">autocommit</span></tt></td>
+<td>Whether or not each SQL statement
+automatically commits to the database. If
+<tt class="docutils literal"><span class="pre">true</span></tt>, then each SQL statement is
+automatically committed to the database. If
+<tt class="docutils literal"><span class="pre">false</span></tt>, then a new set of SQL statements
+starts a transaction, which must be
+explicitly committed via the <tt class="docutils literal"><span class="pre">commit</span></tt>
+command. Also, if <tt class="docutils literal"><span class="pre">autocommit</span></tt> is
+<tt class="docutils literal"><span class="pre">false</span></tt>, the <tt class="docutils literal"><span class="pre">rollback</span></tt> command is
+enabled.</td>
+<td><tt class="docutils literal"><span class="pre">true</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">binarymax</span></tt></td>
+<td>How many bytes to display from binary (BLOB
+and CLOB) columns. Ignored unless
+<tt class="docutils literal"><span class="pre">showbinary</span></tt> is <tt class="docutils literal"><span class="pre">true</span></tt>.</td>
+<td>20</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">echo</span></tt></td>
+<td>Whether or not commands are echoed before
+they are executed.</td>
+<td><tt class="docutils literal"><span class="pre">false</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">showbinary</span></tt></td>
+<td>Whether or not to show data from binary
+(BLOB and CLOB) columns. If <tt class="docutils literal"><span class="pre">true</span></tt>, the
+value of <tt class="docutils literal"><span class="pre">binarymax</span></tt> dictates how many
+bytes to display.</td>
+<td><tt class="docutils literal"><span class="pre">false</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">stacktrace</span></tt></td>
+<td>Whether to display a Python stack trace on
+normal (i.e., expected) errors, like SQL
+syntax errors.</td>
+<td><tt class="docutils literal"><span class="pre">false</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">timings</span></tt></td>
+<td>Whether to display execution times for SQL
+statements.</td>
+<td><tt class="docutils literal"><span class="pre">true</span></tt></td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+</div>
+<div class="section" id="show">
+<h3><a class="toc-backref" href="#id35"><tt class="docutils literal"><span class="pre">.show</span></tt></a></h3>
+<p>The <tt class="docutils literal"><span class="pre">.show</span></tt> command currently only supports one parameter: <tt class="docutils literal"><span class="pre">tables</span></tt>.
+It's used to display the names of all tables in the database.</p>
+</div>
+</div>
+<div class="section" id="extended-commands">
+<h2><a class="toc-backref" href="#id36">Extended Commands</a></h2>
+<p>If you type a command that <em>sqlcmd</em> doesn't recognize as a SQL command or one
+of its internal commands, it passes the command straight through to the
+database and treats the command as it would treate a SQL <tt class="docutils literal"><span class="pre">SELECT</span></tt>. This
+policy allows you to use certain RDBMS-specific commands without <em>sqlcmd</em>
+having to support them explicitly. For instance, here's what happens if you've
+connected <em>sqlcmd</em> to a SQLite database and you try to use the SQLite
+<tt class="docutils literal"><span class="pre">EXPLAIN</span></tt> command:</p>
+<div class="code-block text">
+<div class="highlight"><pre>? explain select distinct id from foo;
+Execution time: 0.000 seconds
+20 rows
+
+addr opcode        p1 p2 p3
+---- ------------- -- -- -----------------
+0    OpenEphemeral 1  0  keyinfo(1,BINARY)
+1    Goto          0  16
+2    Integer       0  0
+3    OpenRead      0  2
+4    SetNumColumns 0  1
+5    Rewind        0  14
+6    Column        0  0
+7    MakeRecord    -1 0
+8    Distinct      1  11
+9    Pop           2  0
+10   Goto          0  13
+11   IdxInsert     1  0
+12   Callback      1  0
+13   Next          0  6
+14   Close         0  0
+15   Halt          0  0
+16   Transaction   0  0
+17   VerifyCookie  0  1
+18   Goto          0  2
+19   Noop          0  0
+</pre></div>
+
+</div>
+<p>Similarly, here's what happens when you run the <tt class="docutils literal"><span class="pre">ANALYZE</span></tt> command on a
+PostgreSQL database:</p>
+<div class="code-block text">
+<div class="highlight"><pre>? analyze verbose;
+Execution time: 0.054 seconds
+0 rows
+</pre></div>
+
+</div>
+<div class="section" id="restrictions">
+<h3><a class="toc-backref" href="#id37">Restrictions</a></h3>
+<ul class="simple">
+<li>Some extended commands don't work well through <em>sqlcmd</em>. Your mileage
+may vary.</li>
+<li>Since these extended commands are database-specific, they do not show
+up in command completion output, and they do not support command completion
+themselves.</li>
+</ul>
+</div>
+</div>
+<div class="section" id="command-history">
+<h2><a class="toc-backref" href="#id38">Command History</a></h2>
+<p><em>sqlcmd</em> supports a <a class="reference external" href="http://www.gnu.org/software/bash/manual/">bash</a>-like command history mechanism. Every command
+you type at the command prompt is saved in an internal memory buffer, accessible
+via the <tt class="docutils literal"><span class="pre">.history</span></tt> command.</p>
+<p>Because <em>sqlcmd</em> also supports GNU Readline, you can use the standard GNU
+Readline key bindings to scroll through your history list, edit previous
+commands, and re-issue them.</p>
+<p>Upon exit, <em>sqlcmd</em> saves its internal history buffer to a database-specific
+file. The file's name is adapted from the primary name of the database (<em>i.e.</em>,
+from the section name for the database in the configuration file). The
+history files are stored in directory <tt class="docutils literal"><span class="pre">.sqlcmd</span></tt> under your home directory.
+History files always end with &quot;.hist&quot;.</p>
+<p>For example, consider this configuration file:</p>
+<div class="code-block ini">
+<div class="highlight"><pre><span class="k">[db.testdb]</span>
+<span class="na">names</span><span class="o">=</span><span class="s">sqlite, test</span>
+<span class="na">database</span><span class="o">=</span><span class="s">/tmp/test.db</span>
+<span class="na">type</span><span class="o">=</span><span class="s">sqlite</span>
+
+<span class="k">[db.customers]</span>
+<span class="na">names</span><span class="o">=</span><span class="s">oracle</span>
+<span class="na">database</span><span class="o">=</span><span class="s">customers</span>
+<span class="na">type</span><span class="o">=</span><span class="s">oracle</span>
+<span class="na">host</span><span class="o">=</span><span class="s">db.example.com</span>
+<span class="na">user</span><span class="o">=</span><span class="s">scott</span>
+<span class="na">password</span><span class="o">=</span><span class="s">tiger</span>
+</pre></div>
+
+</div>
+<p>The history file for the first database is <tt class="docutils literal"><span class="pre">$HOME/.sqlcmd/testdb.hist</span></tt>, and
+the history file for the second database is <tt class="docutils literal"><span class="pre">$HOME/.sqlcmd/customers.hist.</span></tt></p>
+</div>
+<div class="section" id="command-completion">
+<h2><a class="toc-backref" href="#id39">Command Completion</a></h2>
+<p><em>sqlcmd</em> supports TAB-completion in various places, in the manner of the GNU
+<a class="reference external" href="http://www.gnu.org/software/bash/manual/">bash</a> shell. TAB-completion is (mostly) context sensitive. For example:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">.&lt;TAB&gt;</span></tt></dt>
+<dd>Displays a list of all the &quot;.&quot; commands</dd>
+<dt><tt class="docutils literal"><span class="pre">.set</span> <span class="pre">&lt;TAB&gt;</span></tt></dt>
+<dd>Displays the variables you can set.</dd>
+<dt><tt class="docutils literal"><span class="pre">.set</span> <span class="pre">v&lt;TAB&gt;</span></tt></dt>
+<dd>Completes the variable name that starts with &quot;v&quot;. If multiple variables
+start with &quot;v&quot;, then the common characters are completed, and a second
+TAB will display all the matching variables.</dd>
+<dt><tt class="docutils literal"><span class="pre">.connect</span> <span class="pre">&lt;TAB&gt;</span></tt></dt>
+<dd>shows all the database names and aliases in the config file</dd>
+<dt><tt class="docutils literal"><span class="pre">.connect</span> <span class="pre">a&lt;TAB&gt;</span></tt></dt>
+<dd>Completes the database name or alias that starts with &quot;a&quot;. If multiple
+names start with &quot;a&quot;, then the common characters are completed, and a second
+TAB will display all the matching names.</dd>
+<dt><tt class="docutils literal"><span class="pre">select</span> <span class="pre">*</span> <span class="pre">from</span> <span class="pre">&lt;TAB&gt;</span></tt></dt>
+<dd>Shows the tables in the current database. (So does <tt class="docutils literal"><span class="pre">select</span> <span class="pre">``\</span> <span class="pre">*&lt;TAB&gt;*,</span>
+<span class="pre">actually.)</span> <span class="pre">This</span> <span class="pre">works</span> <span class="pre">for</span> <span class="pre">``insert</span></tt>, <tt class="docutils literal"><span class="pre">update</span></tt>, <tt class="docutils literal"><span class="pre">delete</span></tt>, <tt class="docutils literal"><span class="pre">drop</span></tt>,
+and <tt class="docutils literal"><span class="pre">.desc</span></tt>, as well. The completion in SQL commands <em>only</em> completes
+table names; it is not currently sensitive to SQL syntax.</dd>
+<dt><tt class="docutils literal"><span class="pre">.history</span> <span class="pre">&lt;TAB&gt;</span></tt></dt>
+<dd>Shows the commands in the history.</dd>
+<dt><tt class="docutils literal"><span class="pre">.history</span> <span class="pre">s&lt;TAB&gt;</span></tt></dt>
+<dd>Shows the names of all commands in the history beginning with &quot;s&quot;.</dd>
+<dt><tt class="docutils literal"><span class="pre">.load</span> <span class="pre">&lt;TAB&gt;</span></tt></dt>
+<dd>Lists all the files in the current directory</dd>
+<dt><tt class="docutils literal"><span class="pre">.load</span> <span class="pre">f&lt;TAB&gt;</span></tt></dt>
+<dd>Lists all the files in the current directory that start with &quot;s&quot;</dd>
+<dt><tt class="docutils literal"><span class="pre">.load</span> <span class="pre">~/&lt;TAB&gt;</span></tt></dt>
+<dd>Lists all the files in your home directory</dd>
+<dt><tt class="docutils literal"><span class="pre">.load</span> <span class="pre">~/d&lt;TAB&gt;</span></tt></dt>
+<dd>Lists all the files in your home directory that start with &quot;d&quot;</dd>
+</dl>
+<p>etc.</p>
+</div>
+</div>
+<div class="section" id="license-and-copyright">
+<h1><a class="toc-backref" href="#id40">License and Copyright</a></h1>
+<p>Copyright © 2008 Brian M. Clapper</p>
+<p>This is free software, released under the following BSD-like license:</p>
+<p>Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:</p>
+<ol class="arabic">
+<li><p class="first">Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.</p>
+</li>
+<li><p class="first">The end-user documentation included with the redistribution, if any,
+must include the following acknowledgement:</p>
+<p>This product includes software developed by Brian M. Clapper
+(<a class="reference external" href="mailto:bmc&#64;clapper.org">bmc&#64;clapper.org</a>, <a class="reference external" href="http://www.clapper.org/bmc/">http://www.clapper.org/bmc/</a>). That software is
+copyright © 2008 Brian M. Clapper.</p>
+<p>Alternately, this acknowlegement may appear in the software itself, if
+and wherever such third-party acknowlegements normally appear.</p>
+</li>
+</ol>
+<p>THIS SOFTWARE IS PROVIDED <strong>AS IS</strong> AND ANY EXPRESSED OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+EVENT SHALL BRIAN M. CLAPPER BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+</div>
+</div>
+</body>
+</html>
