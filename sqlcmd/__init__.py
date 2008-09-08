@@ -85,7 +85,7 @@ from enum import Enum
 # ---------------------------------------------------------------------------
 
 # Info about the module
-__version__   = '0.3.1'
+__version__   = '0.3.2'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
 __url__       = 'http://www.clapper.org/software/python/sqlcmd/'
