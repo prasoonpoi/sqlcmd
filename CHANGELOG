@@ -1,7 +1,7 @@
 $Id$
 ---------------------------------------------------------------------------
 
-Version 0.3.2 (...)
+Version 0.3.2 (8 September, 2008)
 
 - Now properly bundles ez_setup.py
 - Now supports Gadfly (http://gadfly.sourceforge.net/)
