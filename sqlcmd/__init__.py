@@ -85,7 +85,7 @@ from enum import Enum
 # ---------------------------------------------------------------------------
 
 # Info about the module
-__version__   = '0.3.2'
+__version__   = '0.3.3'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
 __url__       = 'http://www.clapper.org/software/python/sqlcmd/'
@@ -1794,7 +1794,7 @@ class Main(object):
 
         args = args[1:]
         if not len(args) in (0, 1, 2):
-            opt_parser.show_usage('Incorrect number of parameters')
+            opt_parser.die_with_usage('Incorrect number of parameters')
 
         if options.loglevel:
             if not (options.loglevel in LOG_LEVELS):
@@ -1819,21 +1819,22 @@ class Main(object):
         else:
             self.__alias = args[0]
             if not args[1].startswith('@'):
-                opt_parser.show_usage('File parameter must start with "@"')
+                opt_parser.die_with_usage('File parameter must start with "@"')
             self.__input_file = args[1][1:]
 
         if options.database:
             self.__db_connect_info = options.database.split(',')
             if len(self.__db_connect_info) != 5:
-                opt_parser.show_usage('Bad argument "%s" to -d option' %\
-                                     options.database)
+                opt_parser.die_with_usage('Bad argument "%s" to -d option' %\
+                                          options.database)
 
         if not (self.__db_connect_info or self.__alias):
-            opt_parser.show_usage('You must specify either an alias or a '
-                                 'valid argument to "-d"')
+            opt_parser.die_with_usage('You must specify either an alias or a '
+                                      'valid argument to "-d"')
 
         if self.__db_connect_info and self.__alias:
-            opt_parser.show_usage('You cannot specify both an alias and "-d"')
+            opt_parser.die_with_usage('You cannot specify both an alias '
+                                      'and "-d"')
 
     def __init_logging(self, level, filename):
         """Initialize logging subsystem"""

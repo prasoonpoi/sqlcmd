@@ -1,6 +1,12 @@
 $Id$
 ---------------------------------------------------------------------------
 
+Version 0.3.3 (...)
+
+- Now calls grizzled.cmdline.CommandLineParser's die_with_usage() method,
+  instead of the deprecated show_usage() method.
+
+---------------------------------------------------------------------------
 Version 0.3.2 (8 September, 2008)
 
 - Now properly bundles ez_setup.py
