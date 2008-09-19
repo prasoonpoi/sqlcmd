@@ -98,7 +98,7 @@ __all__ = ['SQLCmd', 'main']
 # Constants
 # ---------------------------------------------------------------------------
 
-VERSION_STAMP = '''SQLCmd, version %s ($Revision$)
+VERSION_STAMP = '''SQLCmd, version %s
 Copyright 2008 Brian M. Clapper.''' % __version__
 
 INTRO =  VERSION_STAMP + '''
