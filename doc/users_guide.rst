@@ -35,12 +35,13 @@ Some features at a glance
 - Supports retrieving database metadata (getting a list of tables, querying
   the table's columns and their data types, listing the indexes and foreign
   keys for a table, etc.).
+- Unix shell-style variable substitution.
 - Standard interface that works the same no matter what database you're using.
 - Uses the enhanced database drivers in the `Grizzled API`_'s ``db``
   module. (Those drivers are, in turn, built on top of standard Python
   DB API drivers like ``psycopg2`` and ``MySQLdb``.)
 - Supports `MySQL`_, `Oracle`_, `PostgreSQL`_, `SQL Server`_ `SQLite 3`_ and
-  Gadfly_ without customization (though you will have to install Python DB API 
+  Gadfly_ without customization (though you will have to install Python DB API
   drivers for all but SQLite 3).
 - Written entirely in `Python`_, which makes it very portable (though the
   Python DB API database drivers are often written in C and may not be available
@@ -369,7 +370,7 @@ can extend *sqlcmd* to support additional database. See the section on
     +----------------+--------------+-------------------+
     | ``gadfly``     | Gadfly_      | Gadly itself      |
     +----------------+--------------+-------------------+
-    
+
 .. _psycopg2: http://pypi.python.org/pypi/psycopg2/2.0.4
 .. _MySQLdb: http://sourceforge.net/projects/mysql-python
 .. _cx_Oracle: http://python.net/crew/atuining/cx_Oracle/
@@ -911,15 +912,41 @@ The supported variables are:
 The ``.show`` command currently only supports one parameter: ``tables``.
 It's used to display the names of all tables in the database.
 
+``.var``
+~~~~~~~~
+
+Set a shell-style variable that can be interpolated in subsequent input lines.
+For example:
+
+.. code-block:: sql
+
+    ? .var table=mytable
+    ? select * from $mytable
+    
+or:
+
+.. code-block:: sql
+
+    ? table=mytable
+    ? select * from $mytable
+
+See `Unix shell-style variables`_ for more information.
+
+``.vars``
+~~~~~~~~~
+
+Show all variables current set by ``.var``.
+
+
 Extended Commands
 -----------------
 
-If you type a command that *sqlcmd* doesn't recognize as a SQL command or one 
+If you type a command that *sqlcmd* doesn't recognize as a SQL command or one
 of its internal commands, it passes the command straight through to the
 database and treats the command as it would treate a SQL ``SELECT``. This
 policy allows you to use certain RDBMS-specific commands without *sqlcmd*
 having to support them explicitly. For instance, here's what happens if you've
-connected *sqlcmd* to a SQLite database and you try to use the SQLite 
+connected *sqlcmd* to a SQLite database and you try to use the SQLite
 ``EXPLAIN`` command:
 
 .. code-block:: text
@@ -927,30 +954,30 @@ connected *sqlcmd* to a SQLite database and you try to use the SQLite
     ? explain select distinct id from foo;
     Execution time: 0.000 seconds
     20 rows
-    
-    addr opcode        p1 p2 p3               
+
+    addr opcode        p1 p2 p3
     ---- ------------- -- -- -----------------
     0    OpenEphemeral 1  0  keyinfo(1,BINARY)
-    1    Goto          0  16                  
-    2    Integer       0  0                   
-    3    OpenRead      0  2                   
-    4    SetNumColumns 0  1                   
-    5    Rewind        0  14                  
-    6    Column        0  0                   
-    7    MakeRecord    -1 0                   
-    8    Distinct      1  11                  
-    9    Pop           2  0                   
-    10   Goto          0  13                  
-    11   IdxInsert     1  0                   
-    12   Callback      1  0                   
-    13   Next          0  6                   
-    14   Close         0  0                   
-    15   Halt          0  0                   
-    16   Transaction   0  0                   
-    17   VerifyCookie  0  1                   
-    18   Goto          0  2                   
-    19   Noop          0  0                   
-    
+    1    Goto          0  16
+    2    Integer       0  0
+    3    OpenRead      0  2
+    4    SetNumColumns 0  1
+    5    Rewind        0  14
+    6    Column        0  0
+    7    MakeRecord    -1 0
+    8    Distinct      1  11
+    9    Pop           2  0
+    10   Goto          0  13
+    11   IdxInsert     1  0
+    12   Callback      1  0
+    13   Next          0  6
+    14   Close         0  0
+    15   Halt          0  0
+    16   Transaction   0  0
+    17   VerifyCookie  0  1
+    18   Goto          0  2
+    19   Noop          0  0
+
 Similarly, here's what happens when you run the ``ANALYZE`` command on a
 PostgreSQL database:
 
@@ -1008,6 +1035,127 @@ For example, consider this configuration file:
 The history file for the first database is ``$HOME/.sqlcmd/testdb.hist``, and
 the history file for the second database is ``$HOME/.sqlcmd/customers.hist.``
 
+Unix shell-style variables
+--------------------------
+
+To save typing, or for minor programming tasks, you can set variables
+interactively or within a *sqlcmd* script. The syntax is reminiscent of
+the *bash* shell, though with some differences:
+
+.. code-block:: sql
+
+    ? table=mytable
+    ? select * from $table
+
+The ``variable=value`` syntax is actually a convenient shorthand notation for::
+
+    .var variable=value
+    
+A variable's value can be interpolated with either "${varname}" or "$varname".
+Thus, these two lines are identical:
+
+.. code-block:: sql
+
+    ? select * from $table;
+    ? select * from ${table};
+
+Some Differences from Unix Shells
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are some differences from *bash*, however.
+
+Single-line assignments
++++++++++++++++++++++++
+
+Variable assigments cannot span multiple input lines.
+
+Blanks are stripped
++++++++++++++++++++
+
+Blanks are stripped from the beginning and end of both variable names and
+variable values. Thus, the following assignments are equivalent. (The *sqlcmd*
+prompt is shown, for clarity.)
+
+.. code-block:: text
+
+    ? table=mytable
+    ? table = mytable
+    ? table=          mytable
+    ?   table   =  mytable
+
+All four statements set variable "table" to the string "mytable".
+
+If a value must contain leading or trailing blanks, enclose it in either
+single or double quotes. For example:
+
+    ? foo='       bar '
+
+Embedded blanks don't require quotes
+++++++++++++++++++++++++++++++++++++
+
+If a variable value has no leading or trailing blanks, but *does* have
+embedded blanks, no quotes are necessary (though they are permitted).
+The following two variable assignments are identical:
+
+.. code-block:: text
+
+    ? fred=This variable has blanks
+    ? fred="This variable has blanks"
+
+Single and double quotes are semantically identical
++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Like Python, and unlike *bash*, in *sqlcmd*, surrounding a value with
+single quotes has the same meaning as surrounding it with double quotes.
+
+.. code-block:: text
+
+    ? foo='bar'
+    ? .echo $foo
+    bar
+    ? foo="baz"
+    ? .echo $foo
+    baz
+
+You can embed quotes inside of a variable value in one of two ways:
+Use the other quote to surround the value (see below), or escape the quote
+inside the value with a backslash. For example, the following assignments
+all set ``foo`` to the same value.
+
+.. code-block:: text
+
+    ? var_with_quotes="'<-- That's a quote."
+    ? var_with_quotes='\'<-- That\'s a quote.'
+
+Variable names can have hyphens
++++++++++++++++++++++++++++++++
+
+Variable names can consist of alphanumerics, underscores and hyphens, as
+with only one restriction: Two leading hyphens is a comment. Thus, the
+following variable settings are all legal:
+
+.. code-block:: text
+
+    ? -a=foo
+    ? .echo $-a
+    foo
+    ? lispish-var=some value
+    ? .echo ${lispish-var}
+    some value
+    
+Unsetting a variable
+++++++++++++++++++++
+
+There is no ``unset`` command. To unset a variable, simply set it to nothing:
+
+.. code-block:: text
+
+    ? x=foobar
+    ? .echo $x
+    foobar
+    ? x=
+    ? .echo $x
+    ?
 
 Command Completion
 -------------------
@@ -1048,10 +1196,10 @@ Command Completion
 
 ``.load <TAB>``
     Lists all the files in the current directory
-    
+
 ``.load f<TAB>``
     Lists all the files in the current directory that start with "s"
-    
+
 ``.load ~/<TAB>``
     Lists all the files in your home directory
 

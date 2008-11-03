@@ -56,18 +56,20 @@ $Id$
 from __future__ import with_statement
 
 from cmd import Cmd
-import sys
+import cPickle
+import glob
+import logging
 import os.path
 import os
-import cPickle
-import tempfile
-import time
-import textwrap
-import traceback
-import logging
-import glob
-import textwrap
+import re
 from StringIO import StringIO
+from string import Template as StringTemplate
+import sys
+import tempfile
+import textwrap
+import time
+import traceback
+import textwrap
 
 from grizzled import db, system
 from grizzled.cmdline import CommandLineParser
@@ -111,6 +113,10 @@ DEFAULT_CONFIG_DIR = os.path.join(os.environ.get('HOME', os.getcwd()),
 
 RC_FILE = os.path.join(DEFAULT_CONFIG_DIR, 'config')
 HISTORY_FILE_FORMAT = os.path.join(DEFAULT_CONFIG_DIR, '%s.hist')
+
+VARIABLE_ASSIGNMENT_RE = re.compile(r'^([A-Za-z0-9_-]+)=(.*)$')
+VARIABLE_RE = '[A-Za-z0-9_-]+'
+VARIABLE_REFERENCE_PREFIX = '$'
 
 # ---------------------------------------------------------------------------
 # Globals
@@ -496,6 +502,21 @@ class ECmd(Cmd):
                 
         return line
 
+class SQLCmdStringTemplate(StringTemplate):
+    idpattern = VARIABLE_RE
+
+    def substitute(self, vardict):
+        class DictWrapper(dict):
+            def __init__(self, realdict):
+                self.realdict = realdict
+            def __getitem__(self, key):
+                try:
+                    return self.realdict[key]
+                except KeyError:
+                    return ''
+
+        return StringTemplate.substitute(self, DictWrapper(vardict))
+
 class SQLCmd(ECmd):
     """The SQLCmd command interpreter."""
 
@@ -506,14 +527,8 @@ class SQLCmd(ECmd):
     BINARY_FILTER = ''.join([(len(repr(chr(x)))==3) and chr(x) or '?'
                              for x in range(256)])
 
-    NO_SEMI_NEEDED = set()
-    NO_SEMI_NEEDED.add('help')
-    NO_SEMI_NEEDED.add('?')
-    NO_SEMI_NEEDED.add('r')
-    NO_SEMI_NEEDED.add('begin')
-    NO_SEMI_NEEDED.add('commit')
-    NO_SEMI_NEEDED.add('rollback')
-    NO_SEMI_NEEDED.add('eof')
+    NO_SEMI_NEEDED = set(['help', '?', 'r', 'begin', 'commit', 'rollback', 
+                          'eof'])
 
     VAR_TYPES = Enum('boolean', 'string', 'integer')
 
@@ -531,6 +546,7 @@ class SQLCmd(ECmd):
         self.__in_multiline_command = False
         self.save_history = True
         self.identchars = Cmd.identchars + '.'
+        self.variables = {}
 
         def autocommitChanged(var):
             if var.value == True:
@@ -617,6 +633,7 @@ class SQLCmd(ECmd):
         self.__db_config = config_item
 
     def precmd(self, s):
+        s = SQLCmdStringTemplate(s).substitute(self.variables)
         s = s.strip()
         tokens = s.split(None, 1)
         if len(tokens) == 0:
@@ -632,8 +649,13 @@ class SQLCmd(ECmd):
         if not self.__in_multiline_command:
             first = first.lower()
 
-        need_semi = not first in SQLCmd.NO_SEMI_NEEDED;
-        if first.startswith(SQLCmd.COMMENT_PREFIX):
+        need_semi = not first in SQLCmd.NO_SEMI_NEEDED
+        setvar_match = VARIABLE_ASSIGNMENT_RE.match(s)
+        if setvar_match:
+            need_semi = False
+            s = 'dot_var %s=%s' % (setvar_match.group(1), setvar_match.group(2))
+
+        elif first.startswith(SQLCmd.COMMENT_PREFIX):
             # Comments are handled specially. Rather than transform them
             # into something that'll invoke a "do" method, we handle them
             # directly here, then return an empty string. That way, the
@@ -729,7 +751,6 @@ class SQLCmd(ECmd):
         Swiped from the base class and modified.
         """
         if arg:
-            # XXX check arg syntax
             if arg.startswith('.'):
                 arg = 'dot_' + arg[1:]
 
@@ -865,7 +886,7 @@ class SQLCmd(ECmd):
             self.__db.commit()
 
     def complete_select(self, text, line, start_index, end_index):
-        return self.__complete_tables(text)
+        return self.__complete_no_context(text)
 
     def do_insert(self, args):
         """
@@ -874,7 +895,7 @@ class SQLCmd(ECmd):
         self.__handle_update('insert', args)
 
     def complete_insert(self, text, line, start_index, end_index):
-        return self.__complete_tables(text)
+        return self.__complete_no_context(text)
 
     def do_update(self, args):
         """
@@ -883,7 +904,7 @@ class SQLCmd(ECmd):
         self.__handle_update('update', args)
 
     def complete_update(self, text, line, start_index, end_index):
-        return self.__complete_tables(text)
+        return self.__complete_no_context(text)
 
     def do_delete(self, args):
         """
@@ -892,7 +913,7 @@ class SQLCmd(ECmd):
         self.__handle_update('delete', args)
 
     def complete_delete(self, text, line, start_index, end_index):
-        return self.__complete_tables(text)
+        return self.__complete_no_context(text)
 
     def do_create(self, args):
         """
@@ -901,7 +922,7 @@ class SQLCmd(ECmd):
         self.__handle_update('create', args)
 
     def complete_create(self, text, line, start_index, end_index):
-        return self.__complete_tables(text)
+        return self.__complete_no_context(text)
 
     def do_alter(self, args):
         """
@@ -910,7 +931,7 @@ class SQLCmd(ECmd):
         self.__handle_update('alter', args)
 
     def complete_alter(self, text, line, start_index, end_index):
-        return self.__complete_tables(text)
+        return self.__complete_no_context(text)
 
     def do_drop(self, args):
         """
@@ -919,7 +940,7 @@ class SQLCmd(ECmd):
         self.__handle_update('drop', args)
 
     def complete_drop(self, text, line, start_index, end_index):
-        return self.__complete_tables(text)
+        return self.__complete_no_context(text)
 
     def do_begin(self, args):
         """
@@ -1141,10 +1162,10 @@ class SQLCmd(ECmd):
             cursor.close()
 
     def complete_dot_desc(self, text, line, start_index, end_index):
-        return self.__complete_tables(text)
+        return self.__complete_no_context(text)
 
     def complete_dot_describe(self, text, line, start_index, end_index):
-        return self.__complete_tables(text)
+        return self.__complete_no_context(text)
 
     def do_dot_echo(self, args):
         """
@@ -1159,6 +1180,9 @@ class SQLCmd(ECmd):
             
         print args
 
+    def complete_dot_echo(self, text, line, start_index, end_index):
+        return self.__complete_variables(text)
+
     def do_dot_load(self, args):
         """
         Load and run a file full of commands without exiting the command
@@ -1171,6 +1195,59 @@ class SQLCmd(ECmd):
 
     def complete_dot_load(self, text, line, start_index, end_index):
         return self.complete_dot_run(text, line, start_index, end_index)
+
+    def do_dot_vars(self, args):
+        """
+        Display the list of variables that can be substituted into other
+        input lines. For example:
+        
+            ? table=mytable
+            ? columns="color, size"
+            ? .vars
+            columns="color, size"
+            table="mytable"
+        """
+        if self.variables:
+            names = self.variables.keys()
+            names.sort()
+            for name in names:
+                print '%s="%s"' % (name, self.variables[name].replace('"', '\\"'))
+
+    def do_dot_var(self, args):
+        """
+        Set a variable that can be interpolated, shell style, within subsequent
+        commands. For example:
+        
+            table=mytable
+            select * from $mytable;
+
+        Usage: .var name=value
+               name=value
+        """
+        match = VARIABLE_ASSIGNMENT_RE.match(args)
+        assert match  # Otherwise, this is a bug
+        variable = match.group(1)
+        value = match.group(2)
+        
+        value = value.strip()
+        if value[0] in ('"', "'"):
+            if value[-1] != value[0]:
+                log.error('Missing ending %s in variable value.' %
+                          {'"': 'double quote', 
+                           "'": 'single quote'}[value[0]])
+                return
+            value = value[1:-1]
+
+        if len(value) == 0:
+            if self.variables.has_key(variable):
+                del self.variables[variable]
+        else:
+            new_value = []
+            for c in value:
+                if c == '\\':
+                    continue
+                new_value.append(c)
+            self.variables[variable] = ''.join(new_value)
 
     def do_dot_run(self, args):
         """
@@ -1325,12 +1402,40 @@ class SQLCmd(ECmd):
     def emptyline(self):
         pass
 
-    def __complete_tables(self, text):
-        tables = self.__get_tables()
-        if len(text.strip()) > 0:
-            tables = [t for t in tables if t.startswith(text)]
+    def __complete_no_context(self, text):
+        text = text.strip()
+        items = []
+        if len(text) == 0:
+            items = self.__complete_tables(text)
+        elif text.startswith(VARIABLE_REFERENCE_PREFIX):
+            items = self.__complete_variables(text)
+        else:
+            items = self.__complete_tables(text)
+            
+        return items
 
-        return tables
+    def __complete_tables(self, text):
+        items = []
+        text = text.strip()
+        tables = self.__get_tables()
+        if len(text) > 0:
+            items = [t for t in tables if t.startswith(text)]
+        else:
+            items = tables
+
+        return items
+
+    def __complete_variables(self, text):
+        items = []
+        text = text.strip()
+        if (len(text) > 0) and (text[0] == VARIABLE_REFERENCE_PREFIX):
+            if len(text) > 1:
+                text = text[1:]
+                items = [k for k in self.variables.keys() if k.startswith(text)]
+            else:
+                items = self.variables.keys()
+
+        return ['$%s' % i for i in items]
 
     def __get_tables(self):
         self.__ensure_connected()
@@ -1621,7 +1726,7 @@ class SQLCmd(ECmd):
         completer_delims = self.__history.get_completer_delims()
         new_delims = ''
         for c in completer_delims:
-            if c not in ['~', '/']:
+            if c not in ['~', '/', '$']:
                 new_delims += c
 
         self.__history.set_completer_delims(new_delims)

@@ -194,17 +194,31 @@ ul.simple li
 <li><a class="reference internal" href="#run" id="id33"><tt class="docutils literal"><span class="pre">.run</span></tt></a></li>
 <li><a class="reference internal" href="#set" id="id34"><tt class="docutils literal"><span class="pre">.set</span></tt></a></li>
 <li><a class="reference internal" href="#show" id="id35"><tt class="docutils literal"><span class="pre">.show</span></tt></a></li>
+<li><a class="reference internal" href="#var" id="id36"><tt class="docutils literal"><span class="pre">.var</span></tt></a></li>
+<li><a class="reference internal" href="#vars" id="id37"><tt class="docutils literal"><span class="pre">.vars</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#extended-commands" id="id36">Extended Commands</a><ul>
-<li><a class="reference internal" href="#restrictions" id="id37">Restrictions</a></li>
+<li><a class="reference internal" href="#extended-commands" id="id38">Extended Commands</a><ul>
+<li><a class="reference internal" href="#restrictions" id="id39">Restrictions</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#command-history" id="id38">Command History</a></li>
-<li><a class="reference internal" href="#command-completion" id="id39">Command Completion</a></li>
+<li><a class="reference internal" href="#command-history" id="id40">Command History</a></li>
+<li><a class="reference internal" href="#unix-shell-style-variables" id="id41">Unix shell-style variables</a><ul>
+<li><a class="reference internal" href="#some-differences-from-unix-shells" id="id42">Some Differences from Unix Shells</a><ul>
+<li><a class="reference internal" href="#single-line-assignments" id="id43">Single-line assignments</a></li>
+<li><a class="reference internal" href="#blanks-are-stripped" id="id44">Blanks are stripped</a></li>
+<li><a class="reference internal" href="#embedded-blanks-don-t-require-quotes" id="id45">Embedded blanks don't require quotes</a></li>
+<li><a class="reference internal" href="#single-and-double-quotes-are-semantically-identical" id="id46">Single and double quotes are semantically identical</a></li>
+<li><a class="reference internal" href="#variable-names-can-have-hyphens" id="id47">Variable names can have hyphens</a></li>
+<li><a class="reference internal" href="#unsetting-a-variable" id="id48">Unsetting a variable</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#license-and-copyright" id="id40">License and Copyright</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#command-completion" id="id49">Command Completion</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#license-and-copyright" id="id50">License and Copyright</a></li>
 </ul>
 </div>
 <div class="section" id="introduction">
@@ -222,6 +236,7 @@ has its own history file.</li>
 <li>Supports retrieving database metadata (getting a list of tables, querying
 the table's columns and their data types, listing the indexes and foreign
 keys for a table, etc.).</li>
+<li>Unix shell-style variable substitution.</li>
 <li>Standard interface that works the same no matter what database you're using.</li>
 <li>Uses the enhanced database drivers in the <a class="reference external" href="http://www.clapper.org/software/python/grizzled/">Grizzled API</a>'s <tt class="docutils literal"><span class="pre">db</span></tt>
 module. (Those drivers are, in turn, built on top of standard Python
@@ -1141,9 +1156,32 @@ statements.</td>
 <p>The <tt class="docutils literal"><span class="pre">.show</span></tt> command currently only supports one parameter: <tt class="docutils literal"><span class="pre">tables</span></tt>.
 It's used to display the names of all tables in the database.</p>
 </div>
+<div class="section" id="var">
+<h3><a class="toc-backref" href="#id36"><tt class="docutils literal"><span class="pre">.var</span></tt></a></h3>
+<p>Set a shell-style variable that can be interpolated in subsequent input lines.
+For example:</p>
+<div class="code-block sql">
+<div class="highlight"><pre><span class="o">?</span> <span class="p">.</span><span class="n">var</span> <span class="k">table</span><span class="o">=</span><span class="n">mytable</span>
+<span class="o">?</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="err">$</span><span class="n">mytable</span>
+</pre></div>
+
+</div>
+<p>or:</p>
+<div class="code-block sql">
+<div class="highlight"><pre><span class="o">?</span> <span class="k">table</span><span class="o">=</span><span class="n">mytable</span>
+<span class="o">?</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="err">$</span><span class="n">mytable</span>
+</pre></div>
+
+</div>
+<p>See <a class="reference internal" href="#unix-shell-style-variables">Unix shell-style variables</a> for more information.</p>
+</div>
+<div class="section" id="vars">
+<h3><a class="toc-backref" href="#id37"><tt class="docutils literal"><span class="pre">.vars</span></tt></a></h3>
+<p>Show all variables current set by <tt class="docutils literal"><span class="pre">.var</span></tt>.</p>
+</div>
 </div>
 <div class="section" id="extended-commands">
-<h2><a class="toc-backref" href="#id36">Extended Commands</a></h2>
+<h2><a class="toc-backref" href="#id38">Extended Commands</a></h2>
 <p>If you type a command that <em>sqlcmd</em> doesn't recognize as a SQL command or one
 of its internal commands, it passes the command straight through to the
 database and treats the command as it would treate a SQL <tt class="docutils literal"><span class="pre">SELECT</span></tt>. This
@@ -1191,7 +1229,7 @@ Execution time: 0.054 seconds
 
 </div>
 <div class="section" id="restrictions">
-<h3><a class="toc-backref" href="#id37">Restrictions</a></h3>
+<h3><a class="toc-backref" href="#id39">Restrictions</a></h3>
 <ul class="simple">
 <li>Some extended commands don't work well through <em>sqlcmd</em>. Your mileage
 may vary.</li>
@@ -1202,7 +1240,7 @@ themselves.</li>
 </div>
 </div>
 <div class="section" id="command-history">
-<h2><a class="toc-backref" href="#id38">Command History</a></h2>
+<h2><a class="toc-backref" href="#id40">Command History</a></h2>
 <p><em>sqlcmd</em> supports a <a class="reference external" href="http://www.gnu.org/software/bash/manual/">bash</a>-like command history mechanism. Every command
 you type at the command prompt is saved in an internal memory buffer, accessible
 via the <tt class="docutils literal"><span class="pre">.history</span></tt> command.</p>
@@ -1234,8 +1272,126 @@ History files always end with &quot;.hist&quot;.</p>
 <p>The history file for the first database is <tt class="docutils literal"><span class="pre">$HOME/.sqlcmd/testdb.hist</span></tt>, and
 the history file for the second database is <tt class="docutils literal"><span class="pre">$HOME/.sqlcmd/customers.hist.</span></tt></p>
 </div>
+<div class="section" id="unix-shell-style-variables">
+<h2><a class="toc-backref" href="#id41">Unix shell-style variables</a></h2>
+<p>To save typing, or for minor programming tasks, you can set variables
+interactively or within a <em>sqlcmd</em> script. The syntax is reminiscent of
+the <em>bash</em> shell, though with some differences:</p>
+<div class="code-block sql">
+<div class="highlight"><pre><span class="o">?</span> <span class="k">table</span><span class="o">=</span><span class="n">mytable</span>
+<span class="o">?</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="err">$</span><span class="k">table</span>
+</pre></div>
+
+</div>
+<p>The <tt class="docutils literal"><span class="pre">variable=value</span></tt> syntax is actually a convenient shorthand notation for:</p>
+<pre class="literal-block">
+.var variable=value
+</pre>
+<p>A variable's value can be interpolated with either &quot;${varname}&quot; or &quot;$varname&quot;.
+Thus, these two lines are identical:</p>
+<div class="code-block sql">
+<div class="highlight"><pre><span class="o">?</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="err">$</span><span class="k">table</span><span class="p">;</span>
+<span class="o">?</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="err">${</span><span class="k">table</span><span class="err">}</span><span class="p">;</span>
+</pre></div>
+
+</div>
+<div class="section" id="some-differences-from-unix-shells">
+<h3><a class="toc-backref" href="#id42">Some Differences from Unix Shells</a></h3>
+<p>There are some differences from <em>bash</em>, however.</p>
+<div class="section" id="single-line-assignments">
+<h4><a class="toc-backref" href="#id43">Single-line assignments</a></h4>
+<p>Variable assigments cannot span multiple input lines.</p>
+</div>
+<div class="section" id="blanks-are-stripped">
+<h4><a class="toc-backref" href="#id44">Blanks are stripped</a></h4>
+<p>Blanks are stripped from the beginning and end of both variable names and
+variable values. Thus, the following assignments are equivalent. (The <em>sqlcmd</em>
+prompt is shown, for clarity.)</p>
+<div class="code-block text">
+<div class="highlight"><pre>? table=mytable
+? table = mytable
+? table=          mytable
+?   table   =  mytable
+</pre></div>
+
+</div>
+<p>All four statements set variable &quot;table&quot; to the string &quot;mytable&quot;.</p>
+<p>If a value must contain leading or trailing blanks, enclose it in either
+single or double quotes. For example:</p>
+<blockquote>
+? foo='       bar '</blockquote>
+</div>
+<div class="section" id="embedded-blanks-don-t-require-quotes">
+<h4><a class="toc-backref" href="#id45">Embedded blanks don't require quotes</a></h4>
+<p>If a variable value has no leading or trailing blanks, but <em>does</em> have
+embedded blanks, no quotes are necessary (though they are permitted).
+The following two variable assignments are identical:</p>
+<div class="code-block text">
+<div class="highlight"><pre>? fred=This variable has blanks
+? fred=&quot;This variable has blanks&quot;
+</pre></div>
+
+</div>
+</div>
+<div class="section" id="single-and-double-quotes-are-semantically-identical">
+<h4><a class="toc-backref" href="#id46">Single and double quotes are semantically identical</a></h4>
+<p>Like Python, and unlike <em>bash</em>, in <em>sqlcmd</em>, surrounding a value with
+single quotes has the same meaning as surrounding it with double quotes.</p>
+<div class="code-block text">
+<div class="highlight"><pre>? foo=&#39;bar&#39;
+? .echo $foo
+bar
+? foo=&quot;baz&quot;
+? .echo $foo
+baz
+</pre></div>
+
+</div>
+<p>You can embed quotes inside of a variable value in one of two ways:
+Use the other quote to surround the value (see below), or escape the quote
+inside the value with a backslash. For example, the following assignments
+all set <tt class="docutils literal"><span class="pre">foo</span></tt> to the same value.</p>
+<div class="code-block text">
+<div class="highlight"><pre>? var_with_quotes=&quot;&#39;&lt;-- That&#39;s a quote.&quot;
+? var_with_quotes=&#39;\&#39;&lt;-- That\&#39;s a quote.&#39;
+</pre></div>
+
+</div>
+</div>
+<div class="section" id="variable-names-can-have-hyphens">
+<h4><a class="toc-backref" href="#id47">Variable names can have hyphens</a></h4>
+<p>Variable names can consist of alphanumerics, underscores and hyphens, as
+with only one restriction: Two leading hyphens is a comment. Thus, the
+following variable settings are all legal:</p>
+<div class="code-block text">
+<div class="highlight"><pre>? -a=foo
+? .echo $-a
+foo
+? lispish-var=some value
+? .echo ${lispish-var}
+some value
+</pre></div>
+
+</div>
+</div>
+<div class="section" id="unsetting-a-variable">
+<h4><a class="toc-backref" href="#id48">Unsetting a variable</a></h4>
+<p>There is no <tt class="docutils literal"><span class="pre">unset</span></tt> command. To unset a variable, simply set it to nothing:</p>
+<div class="code-block text">
+<div class="highlight"><pre>? x=foobar
+? .echo $x
+foobar
+? x=
+? .echo $x
+?
+</pre></div>
+
+</div>
+</div>
+</div>
+</div>
 <div class="section" id="command-completion">
-<h2><a class="toc-backref" href="#id39">Command Completion</a></h2>
+<h2><a class="toc-backref" href="#id49">Command Completion</a></h2>
 <p><em>sqlcmd</em> supports TAB-completion in various places, in the manner of the GNU
 <a class="reference external" href="http://www.gnu.org/software/bash/manual/">bash</a> shell. TAB-completion is (mostly) context sensitive. For example:</p>
 <dl class="docutils">
@@ -1275,7 +1431,7 @@ table names; it is not currently sensitive to SQL syntax.</dd>
 </div>
 </div>
 <div class="section" id="license-and-copyright">
-<h1><a class="toc-backref" href="#id40">License and Copyright</a></h1>
+<h1><a class="toc-backref" href="#id50">License and Copyright</a></h1>
 <p>Copyright © 2008 Brian M. Clapper</p>
 <p>This is free software, released under the following BSD-like license:</p>
 <p>Redistribution and use in source and binary forms, with or without
