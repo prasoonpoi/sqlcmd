@@ -8,9 +8,9 @@ User's Guide
 
 :Author: Brian M. Clapper
 :Contact: bmc@clapper.org
-:Date: $Date$
+:Date: 4 November, 2008
 :Web site: http://www.clapper.org/software/python/sqlcmd/
-:Copyright: Copyright © 2008 Brian M. Clapper
+:Copyright: Copyright (c) 2008 Brian M. Clapper
 
 .. contents::
 
