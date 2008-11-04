@@ -484,7 +484,7 @@ class ECmd(Cmd):
                     readline.set_completer(self.old_completer)
                 except ImportError:
                     pass
-                
+
     def get_input(self, prompt):
         if self.use_rawinput:
             try:
@@ -499,7 +499,7 @@ class ECmd(Cmd):
                 line = 'EOF'
             else:
                 line = line[:-1] # chop \n
-                
+
         return line
 
 class SQLCmdStringTemplate(StringTemplate):
@@ -527,7 +527,7 @@ class SQLCmd(ECmd):
     BINARY_FILTER = ''.join([(len(repr(chr(x)))==3) and chr(x) or '?'
                              for x in range(256)])
 
-    NO_SEMI_NEEDED = set(['help', '?', 'r', 'begin', 'commit', 'rollback', 
+    NO_SEMI_NEEDED = set(['help', '?', 'r', 'begin', 'commit', 'rollback',
                           'eof'])
 
     VAR_TYPES = Enum('boolean', 'string', 'integer')
@@ -1163,13 +1163,13 @@ class SQLCmd(ECmd):
         """
         Echo all remaining arguments to standard output. Useful for
         scripts.
-        
+
         Usage:
             .echo [args]
         """
         if args:
             args = args.strip()
-            
+
         print args
 
     def complete_dot_echo(self, text, line, start_index, end_index):
@@ -1192,7 +1192,7 @@ class SQLCmd(ECmd):
         """
         Display the list of variables that can be substituted into other
         input lines. For example:
-        
+
             ? table=mytable
             ? columns="color, size"
             ? .vars
@@ -1210,7 +1210,7 @@ class SQLCmd(ECmd):
         """
         Set a variable that can be interpolated, shell style, within subsequent
         commands. For example:
-        
+
             table=mytable
             select * from $mytable;
 
@@ -1221,12 +1221,12 @@ class SQLCmd(ECmd):
         assert match  # Otherwise, this is a bug
         variable = match.group(1)
         value = match.group(2)
-        
+
         value = value.strip()
         if value[0] in ('"', "'"):
             if value[-1] != value[0]:
                 log.error('Missing ending %s in variable value.' %
-                          {'"': 'double quote', 
+                          {'"': 'double quote',
                            "'": 'single quote'}[value[0]])
                 return
             value = value[1:-1]
@@ -1341,19 +1341,21 @@ class SQLCmd(ECmd):
 
         return aliases
 
-    def help_variables(self):
+    def help_settings(self):
         print """
-        There are various variables that control the behavior of sqlcmd.
-        These variables are set via a special structured comment syntax;
-        that way, SQL scripts that set sqlcmd variables can still be used
-        with other SQL interpreters without causing problems.
+        There are various settings that control the behavior of sqlcmd. These
+        values are set via a special structured comment syntax; that way, SQL
+        scripts that set sqlcmd variables can still be used with other SQL
+        interpreters without causing problems.
 
-        Usage: .set var value
+        Usage: .set setting value
 
-        Boolean variables can take the values 'on', 'off', 'true', 'false',
-        'yes', 'no', '0' or '1'.
+        Boolean settings can take the values "on", "off", "true", "false",
+        "yes", "no", "0" or "1".
 
-        The list of variables, their types, and their meaning follow:
+        Typing ".set" by itself lists all current settings.
+
+        The list of settings, their types, and their meaning follow:
         """
 
         name_width = 0
@@ -1387,7 +1389,7 @@ class SQLCmd(ECmd):
         if command.startswith('dot_'):
             command = command.replace('dot_', '.')
             log.error('"%s" is an unknown sqlcmd command.' % command)
-            
+
         else:
             # Pass through to database engine, as if it were a SELECT.
             self.__ensure_connected()
@@ -1411,7 +1413,7 @@ class SQLCmd(ECmd):
             items = self.__complete_variables(text)
         else:
             items = self.__complete_tables(text)
-            
+
         return items
 
     def __complete_tables(self, text):
@@ -1795,7 +1797,7 @@ class SQLCmd(ECmd):
                     self.cmdqueue += [line]
                 if history:
                     self.cmdqueue += ['.set history true']
-                    
+
         except IOError, ex:
             log.error('Cannot run file "%s": %s' % (file, str(ex)))
 
@@ -1811,7 +1813,7 @@ class SQLCmd(ECmd):
                                    user=db_config.user,
                                    password=db_config.password,
                                    database=db_config.database)
-           
+
 
         history_file = HISTORY_FILE_FORMAT % db_config.primary_alias
         self.__history_file = os.path.expanduser(history_file)

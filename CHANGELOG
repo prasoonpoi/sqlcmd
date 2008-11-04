@@ -5,6 +5,7 @@ Version 0.4.1 (...)
 
 - Unknown "." commands are no longer passed through to the database engine
   by default, resulting in better error messages.
+- The "help variables" topic is now "help settings".
 
 ---------------------------------------------------------------------------
 Version 0.4 (3 November, 2008)
