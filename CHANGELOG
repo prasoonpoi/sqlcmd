@@ -1,7 +1,7 @@
 $Id$
 ---------------------------------------------------------------------------
 
-Version 0.3.3 (3 November, 2008)
+Version 0.4 (3 November, 2008)
 
 - Now calls grizzled.cmdline.CommandLineParser's die_with_usage() method,
   instead of the deprecated show_usage() method.

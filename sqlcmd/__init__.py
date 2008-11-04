@@ -87,7 +87,7 @@ from enum import Enum
 # ---------------------------------------------------------------------------
 
 # Info about the module
-__version__   = '0.3.3'
+__version__   = '0.4'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
 __url__       = 'http://www.clapper.org/software/python/sqlcmd/'
@@ -343,7 +343,7 @@ class NonFatalError(Exception):
     command interpreter.
     """
     def __init__(self, value):
-        self.value = value
+        self.message = value
 
     def __str__(self):
         return str(self.value)
@@ -546,7 +546,8 @@ class SQLCmd(ECmd):
         self.__in_multiline_command = False
         self.save_history = True
         self.identchars = Cmd.identchars + '.'
-        self.variables = {}
+        self.__variables = {}
+        self.__aborted = False
 
         def autocommitChanged(var):
             if var.value == True:
@@ -599,7 +600,11 @@ class SQLCmd(ECmd):
         print INTRO
 
         if self.__db_config != None:
-            self.__connect_to(self.__db_config)
+            try:
+                self.__connect_to(self.__db_config)
+            except:
+                etype, evalue, etb = sys.exc_info()
+                self.__handle_exception(evalue)
         else:
             self.__init_history()
 
@@ -607,23 +612,10 @@ class SQLCmd(ECmd):
         stop = False
         try:
             stop = Cmd.onecmd(self, line)
-        except NonFatalError, ex:
-            log.error('%s' % str(ex))
-            if self.__flag_is_set('stacktrace'):
-                traceback.print_exc()
-        except db.Warning, ex:
-            log.warning('%s' % str(ex))
-        except db.Error, ex:
-            log.error('%s' % str(ex))
-            if self.__flag_is_set('stacktrace'):
-                traceback.print_exc()
-            if self.__db != None: # mostly a hack for PostgreSQL
-                try:
-                    self.__db.rollback()
-                except db.Error:
-                    pass
         except:
-            raise
+            etype, evalue, etb = sys.exc_info()
+            self.__handle_exception(evalue)
+
         return stop
 
     def set_database(self, database_alias):
@@ -633,7 +625,7 @@ class SQLCmd(ECmd):
         self.__db_config = config_item
 
     def precmd(self, s):
-        s = SQLCmdStringTemplate(s).substitute(self.variables)
+        s = SQLCmdStringTemplate(s).substitute(self.__variables)
         s = s.strip()
         tokens = s.split(None, 1)
         if len(tokens) == 0:
@@ -1207,11 +1199,12 @@ class SQLCmd(ECmd):
             columns="color, size"
             table="mytable"
         """
-        if self.variables:
-            names = self.variables.keys()
+        if self.__variables:
+            names = self.__variables.keys()
             names.sort()
             for name in names:
-                print '%s="%s"' % (name, self.variables[name].replace('"', '\\"'))
+                print '%s="%s"' %\
+                      (name, self.__variables[name].replace('"', '\\"'))
 
     def do_dot_var(self, args):
         """
@@ -1239,15 +1232,15 @@ class SQLCmd(ECmd):
             value = value[1:-1]
 
         if len(value) == 0:
-            if self.variables.has_key(variable):
-                del self.variables[variable]
+            if self.__variables.has_key(variable):
+                del self.__variables[variable]
         else:
             new_value = []
             for c in value:
                 if c == '\\':
                     continue
                 new_value.append(c)
-            self.variables[variable] = ''.join(new_value)
+            self.__variables[variable] = ''.join(new_value)
 
     def do_dot_run(self, args):
         """
@@ -1336,9 +1329,10 @@ class SQLCmd(ECmd):
                 self.__db.close()
             except db.Error:
                 pass
-            self.set_database(tokens[0])
-            assert(self.__db_config != None)
-            self.__connect_to(self.__db_config)
+
+        self.set_database(tokens[0])
+        assert(self.__db_config != None)
+        self.__connect_to(self.__db_config)
 
     def complete_dot_connect(self, text, line, start_index, end_index):
         aliases = self.__config.get_aliases()
@@ -1710,6 +1704,27 @@ class SQLCmd(ECmd):
                           '---------------------------------------'
         print ''
 
+    def __handle_exception(self, ex):
+        if isinstance(ex, NonFatalError):
+            log.error('%s' % ex.message)
+            if self.__flag_is_set('stacktrace'):
+                traceback.print_exc()
+
+        elif isinstance(ex, db.Warning):
+            log.warning('%s' % ex.message)
+
+        elif isinstance(ex, db.Error):
+            log.error('%s' % ex.message)
+            if self.__flag_is_set('stacktrace'):
+                traceback.print_exc()
+            if self.__db != None: # mostly a hack for PostgreSQL
+                try:
+                    self.__db.rollback()
+                except db.Error:
+                    pass
+        else:
+            raise ex
+
     def __exec_SQL(self, cursor, sql_command, args):
         self.__echo(sql_command, args)
         start_elapsed = time.time()
@@ -1790,6 +1805,7 @@ class SQLCmd(ECmd):
                                    user=db_config.user,
                                    password=db_config.password,
                                    database=db_config.database)
+           
 
         history_file = HISTORY_FILE_FORMAT % db_config.primary_alias
         self.__history_file = os.path.expanduser(history_file)

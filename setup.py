@@ -45,6 +45,7 @@ Some features at a glance
 - *sqlcmd* supports SQL, but also supports database metadata (getting a list
   of tables, querying the table's columns and their data types, listing the
   indexes and foreign keys for a table, etc.).
+- *sqlcmd* supports Unix shell-style variables.
 - *sqlcmd* command has a ``.set`` command that displays and controls *sqlcmd*
   settings.
 - *sqlcmd* provides a standard interface that works the same no matter what
