@@ -87,7 +87,7 @@ from enum import Enum
 # ---------------------------------------------------------------------------
 
 # Info about the module
-__version__   = '0.4'
+__version__   = '0.4.1'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
 __url__       = 'http://www.clapper.org/software/python/sqlcmd/'
@@ -1376,7 +1376,6 @@ class SQLCmd(ECmd):
 
 
     def default(self, s):
-        # Pass through to database engine, as if it were a SELECT.
         args = s.split(None, 1)
         command = args[0]
         if len(args) == 1:
@@ -1384,14 +1383,21 @@ class SQLCmd(ECmd):
         else:
             args = args[1]
 
-        self.__ensure_connected()
-        cursor = self.__db.cursor()
-        try:
-            self.__handle_select(args, cursor, command=command)
-        finally:
-            cursor.close()
-        if self.__flag_is_set('autocommit'):
-            self.__db.commit()
+        # If the command begins with "dot_", then it's an unknown dot command.
+        if command.startswith('dot_'):
+            command = command.replace('dot_', '.')
+            log.error('"%s" is an unknown sqlcmd command.' % command)
+            
+        else:
+            # Pass through to database engine, as if it were a SELECT.
+            self.__ensure_connected()
+            cursor = self.__db.cursor()
+            try:
+                self.__handle_select(args, cursor, command=command)
+            finally:
+                cursor.close()
+            if self.__flag_is_set('autocommit'):
+                self.__db.commit()
 
     def emptyline(self):
         pass
