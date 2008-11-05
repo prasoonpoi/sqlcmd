@@ -87,7 +87,7 @@ from enum import Enum
 # ---------------------------------------------------------------------------
 
 # Info about the module
-__version__   = '0.4.1'
+__version__   = '0.4.2'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
 __url__       = 'http://www.clapper.org/software/python/sqlcmd/'
@@ -1701,7 +1701,7 @@ class SQLCmd(ECmd):
                     desc = index_data[2]
                     if sep != None:
                         print sep
-                    s = '%-*s Columns:     (%s)' % \
+                    s = '%-*s Columns:     %s' % \
                         (width, name, ', '.join(columns))
                     print '\n'.join(wrapper.wrap(s))
                     if desc:
