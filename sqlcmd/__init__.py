@@ -346,7 +346,7 @@ class NonFatalError(Exception):
         self.message = value
 
     def __str__(self):
-        return str(self.value)
+        return str(self.message)
 
 class NotConnectedError(NonFatalError):
     """
