@@ -87,7 +87,7 @@ from enum import Enum
 # ---------------------------------------------------------------------------
 
 # Info about the module
-__version__   = '0.4.2'
+__version__   = '0.4.3'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
 __url__       = 'http://www.clapper.org/software/python/sqlcmd/'
@@ -1721,7 +1721,7 @@ class SQLCmd(ECmd):
         elif isinstance(ex, db.Warning):
             log.warning('%s' % ex.message)
 
-        elif isinstance(ex, db.Error):
+        else:
             log.error('%s' % ex.message)
             if self.__flag_is_set('stacktrace'):
                 traceback.print_exc()
@@ -1730,8 +1730,6 @@ class SQLCmd(ECmd):
                     self.__db.rollback()
                 except db.Error:
                     pass
-        else:
-            raise ex
 
     def __exec_SQL(self, cursor, sql_command, args):
         self.__echo(sql_command, args)

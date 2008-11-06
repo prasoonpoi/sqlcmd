@@ -1,6 +1,11 @@
 $Id$
 ---------------------------------------------------------------------------
 
+Version 0.4.3 (5 November, 2008)
+
+- Slightly better error handling.
+
+---------------------------------------------------------------------------
 Version 0.4.2 (5 November, 2008)
 
 - Now pre-reqs Grizzled version 0.8.4 or better, to provide decent Oracle
