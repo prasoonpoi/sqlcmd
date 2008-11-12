@@ -656,6 +656,12 @@ a trailing semi-colon and cannot be on multiple lines. Most (but not all)
 of these commands start with a dot (".") character, to distinguish them
 from commands that are processed by the connected database engine.
 
+``.about``
+~~~~~~~~~
+
+Displays information about *sqlcmd*.
+
+
 ``begin``
 ~~~~~~~~~
 
