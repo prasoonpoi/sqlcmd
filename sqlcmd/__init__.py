@@ -985,6 +985,14 @@ class SQLCmd(ECmd):
                 log.error('%s' % str(ex))
         return True
 
+    def do_dot_about(self, args):
+        """
+        Display information about sqlcmd. Takes no parameters.
+        """
+        import grizzled
+        print VERSION_STAMP
+        print '(Using %s, version %s)' % (grizzled.title, grizzled.version)
+
     def do_dot_exit(self, args):
         """
         Exit sqlcmd. .exit is equivalent to typing the key sequence
