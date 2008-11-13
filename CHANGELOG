@@ -1,16 +1,12 @@
 $Id$
 ---------------------------------------------------------------------------
 
-Version 0.4.4 (...)
+Version 0.4.3 (...)
 
 - Fixed a small bug with the ConfigurationError exception class, improving
   error messages.
 - Added ".about" metacommand.
 - Better formatting of help output.
-
----------------------------------------------------------------------------
-Version 0.4.3 (5 November, 2008)
-
 - Slightly better error handling.
 
 ---------------------------------------------------------------------------
