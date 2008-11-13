@@ -739,8 +739,56 @@ class SQLCmd(ECmd):
         return [n for n in self.completenames('') if n.startswith('.')]
 
     def do_help(self, arg):
+        # Capture the output.
+        old_stdout = self.stdout
+        old_sys_stdout = sys.stdout
+        try:
+            buf = StringIO()
+            self.stdout = buf
+            sys.stdout = buf
+
+            self.__do_help(arg)
+
+            self.stdout = old_stdout
+            sys.stdout = old_sys_stdout
+            help = buf.getvalue()
+            if not help:
+                self.stdout.write("%s\n"%str(self.nohelp % (arg,)))
+                return
+
+            lines = help.split('\n')
+
+            # Figure out the indentation of the first non-blank line.
+            # Also, swallow trailing empty lines.
+            indent = 0
+            empty_lines = 0
+            for line in lines:
+                if len(line.strip()) == 0:
+                    empty_lines += 1
+                else:
+                    if empty_lines:
+                        self.stdout.write('\n' * empty_lines)
+                        empty_lines = 0
+
+                    indent = 0
+                    for c in line:
+                        if c in (' ', '\t'):
+                            indent += 1
+                        else:
+                            break
+                    self.stdout.write('    %s\n' % line[indent:])
+                    
+            # One last blank line at the end.
+            self.stdout.write('\n')
+
+        finally:
+            sys.stdout = old_sys_stdout
+            self.stdout = old_stdout
+
+    def __do_help(self, arg):
         """
-        Swiped from the base class and modified.
+        Swiped from the base class's do_help() method and modified
+        to handle dot commands better.
         """
         if arg:
             if arg.startswith('.'):
@@ -748,17 +796,15 @@ class SQLCmd(ECmd):
 
             try:
                 func = getattr(self, 'help_' + arg)
+                func()
             except AttributeError:
                 try:
                     doc=getattr(self, 'do_' + arg).__doc__
                     if doc:
                         self.stdout.write("%s\n"%str(doc))
-                        return
                 except AttributeError:
                     pass
-                self.stdout.write("%s\n"%str(self.nohelp % (arg,)))
-                return
-            func()
+
         else:
             names = self.get_names()
             cmds_doc = []
@@ -787,11 +833,12 @@ class SQLCmd(ECmd):
                         cmds_doc.append(cmd)
                     else:
                         cmds_undoc.append(cmd)
+
             self.stdout.write("%s\n"%str(self.doc_leader))
             self.print_topics(self.doc_header,   cmds_doc,   15,80)
             self.print_topics(self.misc_header,  help.keys(),15,80)
             self.print_topics(self.undoc_header, cmds_undoc, 15,80)
-
+                
     def do_redo(self, args):
         """
         Re-run a command.
@@ -1351,20 +1398,20 @@ class SQLCmd(ECmd):
 
     def help_settings(self):
         print """
-        There are various settings that control the behavior of sqlcmd. These
-        values are set via a special structured comment syntax; that way, SQL
-        scripts that set sqlcmd variables can still be used with other SQL
-        interpreters without causing problems.
+There are various settings that control the behavior of sqlcmd. These values
+are set via a special structured comment syntax; that way, SQL scripts that
+set sqlcmd variables can still be used with other SQL interpreters without
+causing problems.
 
-        Usage: .set setting value
+Usage: .set setting value
 
-        Boolean settings can take the values "on", "off", "true", "false",
-        "yes", "no", "0" or "1".
+Boolean settings can take the values "on", "off", "true", "false", "yes",
+"no", "0" or "1".
 
-        Typing ".set" by itself lists all current settings.
+Typing ".set" by itself lists all current settings.
 
-        The list of settings, their types, and their meaning follow:
-        """
+The list of settings, their types, and their meaning follow:
+"""
 
         name_width = 0
         for v in self.__VARS.values():
@@ -1372,7 +1419,7 @@ class SQLCmd(ECmd):
 
         names = self.__VARS.keys()
         names.sort()
-        prefix = '        '
+        prefix = '    '
         desc_width = 79 - name_width - len(prefix) - 2
         wrapper = textwrap.TextWrapper(width=desc_width)
         for name in names:
