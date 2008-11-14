@@ -1158,8 +1158,31 @@ statements.</td>
 </div>
 <div class="section" id="show">
 <h3><a class="toc-backref" href="#id36"><tt class="docutils literal"><span class="pre">.show</span></tt></a></h3>
-<p>The <tt class="docutils literal"><span class="pre">.show</span></tt> command currently only supports one parameter: <tt class="docutils literal"><span class="pre">tables</span></tt>.
-It's used to display the names of all tables in the database.</p>
+<p>The <tt class="docutils literal"><span class="pre">.show</span></tt> command displays certain information about the currently
+connected database. Currently, it supports two distinct parameters:</p>
+<blockquote>
+<table border="1" class="docutils">
+<colgroup>
+<col width="22%" />
+<col width="78%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Parameter</th>
+<th class="head">Meaning</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">database</span></tt></td>
+<td>Show information about the current database, including
+database location, RDBMS vendor, RDBMS version, etc.</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">tables</span></tt></td>
+<td>Show the list of user-visible (i.e., non-system)
+tables in the current database.</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
 </div>
 <div class="section" id="var">
 <h3><a class="toc-backref" href="#id37"><tt class="docutils literal"><span class="pre">.var</span></tt></a></h3>

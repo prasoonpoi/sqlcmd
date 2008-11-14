@@ -915,8 +915,19 @@ The supported variables are:
 ``.show``
 ~~~~~~~~~
 
-The ``.show`` command currently only supports one parameter: ``tables``.
-It's used to display the names of all tables in the database.
+The ``.show`` command displays certain information about the currently
+connected database. Currently, it supports two distinct parameters:
+
+
+    +----------------+--------------------------------------------------------+
+    | Parameter      | Meaning                                                |
+    +================+========================================================+
+    | ``database``   | Show information about the current database, including |
+    |                | database location, RDBMS vendor, RDBMS version, etc.   |
+    +----------------+--------------------------------------------------------+
+    | ``tables``     | Show the list of user-visible (i.e., non-system)       |
+    |                | tables in the current database.                        |
+    +----------------+--------------------------------------------------------+
 
 ``.var``
 ~~~~~~~~
