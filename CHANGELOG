@@ -1,7 +1,7 @@
 $Id$
 ---------------------------------------------------------------------------
 
-Version 0.5 (...)
+Version 0.5 (13 November, 2008)
 
 - Added ".about" metacommand.
 - Added ".show database" metacommand, to get information about the current
