@@ -87,11 +87,11 @@ from enum import Enum
 # ---------------------------------------------------------------------------
 
 # Info about the module
-__version__   = '0.4.3'
+__version__   = '0.5'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
 __url__       = 'http://www.clapper.org/software/python/sqlcmd/'
-__copyright__ = '© 1989-2008 Brian M. Clapper'
+__copyright__ = '© 2008 Brian M. Clapper'
 __license__   = 'BSD-style license'
 
 __all__ = ['SQLCmd', 'main']
@@ -100,8 +100,10 @@ __all__ = ['SQLCmd', 'main']
 # Constants
 # ---------------------------------------------------------------------------
 
+MAX_WIDTH = 79
+
 VERSION_STAMP = '''SQLCmd, version %s
-Copyright 2008 Brian M. Clapper.''' % __version__
+Copyright 2008 Brian M. Clapper''' % __version__
 
 INTRO =  VERSION_STAMP + '''
 
@@ -1166,16 +1168,38 @@ class SQLCmd(ECmd):
             for table in self.__get_tables():
                 print table
 
+        elif args.lower() == 'database':
+            self.__echo('.show', args, add_semi=False)
+            self.__ensure_connected()
+            wrapper = textwrap.TextWrapper(width=MAX_WIDTH,
+                                           subsequent_indent='          ')
+            cursor = self.__db.cursor()
+            try:
+                db_info = cursor.get_rdbms_metadata()
+                print wrapper.fill('Database: %s' % self.__db_config.database)
+                if self.__db_config.host:
+                    print wrapper.fill('Host:     %s' % self.__db_config.host)
+                if self.__db_config.port:
+                    print wrapper.fill('Port:     %s' % self.__db_config.port)
+                print wrapper.fill('Vendor:   %s' % db_info.vendor)
+                print wrapper.fill('Product:  %s' % db_info.product)
+                print wrapper.fill('Version:  %s' % db_info.version)
+            finally:
+                cursor.close()
+
         else:
             raise BadCommandError, \
                   'Unknown argument(s) to command ".show": %s' % args
 
     def complete_dot_show(self, text, line, start_index, end_index):
+        possibilities = ['tables', 'database']
         matches = []
         if len(text) == 0:
-            matches = ['tables']
-        elif 'tables'.startswith(text):
-            matches = ['tables']
+            matches = possibilities
+        else:
+            for arg in possibilities:
+                if arg.startswith(text):
+                    matches.append(arg)
 
         return matches
 
@@ -1420,7 +1444,7 @@ The list of settings, their types, and their meaning follow:
         names = self.__VARS.keys()
         names.sort()
         prefix = '    '
-        desc_width = 79 - name_width - len(prefix) - 2
+        desc_width = MAX_WIDTH - name_width - len(prefix) - 2
         wrapper = textwrap.TextWrapper(width=desc_width)
         for name in names:
             v = self.__VARS[name]
@@ -1747,7 +1771,7 @@ The list of settings, their types, and their meaning follow:
                 for index_data in indexes:
                     width = max(width, len(index_data[0]))
 
-                wrapper = textwrap.TextWrapper(width=79)
+                wrapper = textwrap.TextWrapper(width=MAX_WIDTH)
                 wrapper.subsequent_indent = ' ' * (width + 14)
                 sep = None
                 for index_data in indexes:

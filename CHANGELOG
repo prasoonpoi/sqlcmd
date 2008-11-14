@@ -1,11 +1,13 @@
 $Id$
 ---------------------------------------------------------------------------
 
-Version 0.4.3 (...)
+Version 0.5 (...)
 
+- Added ".about" metacommand.
+- Added ".show database" metacommand, to get information about the current
+  database and RDBMS software.
 - Fixed a small bug with the ConfigurationError exception class, improving
   error messages.
-- Added ".about" metacommand.
 - Better formatting of help output.
 - Slightly better error handling.
 
