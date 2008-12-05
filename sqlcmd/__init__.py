@@ -57,7 +57,6 @@ from __future__ import with_statement
 
 from cmd import Cmd
 import cPickle
-import glob
 import logging
 import os.path
 import os
@@ -87,7 +86,7 @@ from enum import Enum
 # ---------------------------------------------------------------------------
 
 # Info about the module
-__version__   = '0.5'
+__version__   = '0.6'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
 __url__       = 'http://www.clapper.org/software/python/sqlcmd/'
