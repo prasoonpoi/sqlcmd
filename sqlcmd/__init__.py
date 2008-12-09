@@ -219,23 +219,29 @@ class SQLCmdConfig(object):
     def __init__(self, config_dir):
         self.__config = {}
         self.__config_dir = config_dir
+        self.variables = {}
 
     def total_databases(self):
         return len(self.__config.keys())
 
-    def load_file(self, file):
-        if os.access(file, os.R_OK|os.F_OK):
+    def load_file(self, path):
+        self.path = path
+        if os.access(path, os.R_OK|os.F_OK):
             cfg = Configuration()
-            cfg.read(file)
+            cfg.read(path)
+
+            handler_table = (
+                # section name regex       function
+                # --------------------------------------------------
+                (re.compile('^db\.'),      self.__config_db),
+                (re.compile('^driver\.'),  self.__config_driver),
+                (re.compile('^settings$'), self.__set_vars),
+            )
 
             for section in cfg.sections:
-                if section.startswith('db.'):
-                    # This is a database configuration.
-                    self.__config_db(cfg, section)
-
-                elif section.startswith('driver.'):
-                    # Database driver configuration
-                    self.__config_driver(cfg, section)
+                for regex, handler in handler_table:
+                    if regex.match(section):
+                        handler(cfg, section)
 
     def __config_db(self, cfg, section):
         primary_name = section[3:] # assumes it starts with 'db.'
@@ -280,6 +286,11 @@ class SQLCmdConfig(object):
         cls = system.class_for_name(class_name)
         name = cfg.get(section, 'name')
         db.add_driver(name, cls)
+
+    def __set_vars(self, cfg, section):
+        self.variables_section = section
+        for option in cfg.options(section):
+            self.variables[option] = cfg.get(section, option)
 
     def add(self, section, alias, host, port, database, type, user, password):
         try:
@@ -383,7 +394,7 @@ class Variable(object):
         self.onChange = onChangeFunc
         self.docstring = docstring
 
-    def setValueFromString(self, s):
+    def set_value_from_string(self, s):
         new_value = None
         if self.type == SQLCmd.VAR_TYPES.boolean:
             new_value = str2bool(s)
@@ -547,7 +558,6 @@ class SQLCmd(ECmd):
         self.__in_multiline_command = False
         self.save_history = True
         self.identchars = Cmd.identchars + '.'
-        self.__variables = {}
         self.__aborted = False
 
         def autocommitChanged(var):
@@ -566,6 +576,10 @@ class SQLCmd(ECmd):
             Variable('binarymax', SQLCmd.VAR_TYPES.integer, 20,
                      'Number of characters to show in a BINARY column, if '
                      '"showbinary" is "true".'),
+            
+            Variable('colspacing', SQLCmd.VAR_TYPES.integer, 1,
+                     'Number of spaces to use between columns when displaying '
+                     'the output of a SELECT statement.'),
 
             Variable('echo',       SQLCmd.VAR_TYPES.boolean, False,
                      'Whether or not SQL statements are echoed.'),
@@ -584,6 +598,8 @@ class SQLCmd(ECmd):
                ]
         for v in vars:
             self.__VARS[v.name] = v
+
+        self.__variables = self.__init_variables()
 
     def run_file_and_exit(self, file):
         self.__run_file(file)
@@ -1066,16 +1082,7 @@ class SQLCmd(ECmd):
         if total_args != 2:
             raise BadCommandError, 'Incorrect number of arguments'
 
-        varname = set_args[0]
-        try:
-            var = self.__VARS[varname]
-            var.setValueFromString(set_args[1])
-
-        except KeyError:
-            raise BadCommandError, 'No such variable: "%s"' % varname
-
-        except ValueError:
-                raise BadCommandError, 'Bad argument to "set %s"' % varname
+        self.__set_variable(set_args[0], set_args[1])
 
     def complete_dot_set(self, text, line, start_index, end_index):
         tokens = line.split()
@@ -1594,8 +1601,9 @@ The list of settings, their types, and their meaning follow:
             headers += ['%-*s' % (col_sizes[i], col_names[i])]
             rules += ['-' * col_sizes[i]]
 
-        print ' '.join(headers)
-        print ' '.join(rules)
+        spacing = ' ' * self.__VARS['colspacing'].value
+        print spacing.join(headers)
+        print spacing.join(rules)
 
         # Finally, read back the data and dump it.
 
@@ -1642,7 +1650,7 @@ The list of settings, their types, and their meaning follow:
                 data += [format % (col_sizes[i], strValue)]
                 i += 1
 
-            print ' '.join(data)
+            print spacing.join(data)
 
         print ''
         f.close()
@@ -1817,6 +1825,32 @@ The list of settings, their types, and their meaning follow:
         if self.__flag_is_set('timings'):
             total_elapsed = end_elapsed - start_elapsed
             print 'Execution time: %5.3f seconds'  % total_elapsed
+
+    def __set_variable(self, varname, value):
+        try:
+            var = self.__VARS[varname]
+            var.set_value_from_string(value)
+
+        except KeyError:
+            raise BadCommandError('No such variable: "%s"' % varname)
+
+        except ValueError:
+            raise BadCommandError('Bad value "%s" for variable "%s".' %
+                                  (value, varname))
+
+    def __init_variables(self):
+        errors = []
+        for varname, value in self.__config.variables.items():
+            try:
+                self.__set_variable(varname, value)
+            except BadCommandError, ex:
+                errors.append(ex.message)
+
+        if errors:
+            log.error('In configuration file "%s", section [%s]:\n%s\n' %
+                      (self.__config.path, 
+                       self.__config.variables_section, 
+                       '\n'.join(errors)))
 
     def __init_history(self):
         self.__history = history.get_history()

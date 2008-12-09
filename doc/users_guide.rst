@@ -196,6 +196,9 @@ The following file specifies the same databases as in the examples, above:
 
     # sqlcmd initialization file
 
+    [settings]
+    colspacing: 2
+
     [db.testdb]
     names=sqlite, test
     database=/tmp/test.db
@@ -259,6 +262,13 @@ Because *sqlcmd* uses the Grizzled API's ``Configuration`` class, you can use
 include directives and variable substitution in the configuration file, if
 you with. See the `grizzled.config.Configuration`_ documentation for more
 details.
+
+The ``settings`` Section
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+This optional section can contain initial values for any of the variables
+that are understood by the `.set`_ command. See `.set`_ for a full explanation
+of each variable.
 
 The ``db.`` Sections
 ~~~~~~~~~~~~~~~~~~~~
@@ -549,6 +559,7 @@ transcript, to whet your appetite:
     ? .set
     autocommit = true
     binarymax  = 20
+    colspacing = 1
     echo       = false
     showbinary = false
     stacktrace = false
@@ -871,6 +882,7 @@ any parameters, ``.set`` displays all internal variables and their values:
     ? .set
     autocommit = true
     binarymax  = 20
+    colspacing = 1
     echo       = true
     showbinary = false
     stacktrace = false
@@ -895,6 +907,9 @@ The supported variables are:
     | ``binarymax``  | How many bytes to display from binary (BLOB | 20       |
     |                | and CLOB) columns. Ignored unless           |          |
     |                | ``showbinary`` is ``true``.                 |          |
+    +----------------+---------------------------------------------+----------+
+    | ``colspacing`` | Number of spaces between each column of     | 1        |
+    |                | result set (i.e., ``SELECT``) output.       |          |
     +----------------+---------------------------------------------+----------+
     | ``echo``       | Whether or not commands are echoed before   | ``false``|
     |                | they are executed.                          |          |
