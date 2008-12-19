@@ -266,9 +266,9 @@ details.
 The ``settings`` Section
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-This optional section can contain initial values for any of the variables
+This optional section can contain initial values for any of the settings
 that are understood by the `.set`_ command. See `.set`_ for a full explanation
-of each variable.
+of each setting.
 
 The ``db.`` Sections
 ~~~~~~~~~~~~~~~~~~~~
@@ -620,7 +620,7 @@ Timings
 
 By default, *sqlcmd* times how long it takes to execute a SQL statement
 and prints the resulting times on the screen. To suppress this behavior,
-set the ``timings`` variable to ``false``:
+set the ``timings`` setting to ``false``:
 
 .. code-block:: text
 
@@ -634,7 +634,7 @@ By default, *sqlcmd* does *not* echo commands to the screen. That's a
 reasonable behavior when you're using *sqlcmd* interactively. However, when
 you're loading a file full of *sqlcmd* statements, you might want each
 statement to be echoed before it is run. To enable command echo, set the
-``echo`` variable to ``true``:
+``echo`` setting to ``true``:
 
 .. code-block:: text
 
@@ -874,8 +874,8 @@ Both commands do exactly the same thing.
 ``.set``
 ~~~~~~~~~
 
-The ``.set`` command displays or alters internal *sqlcmd* variables. Without
-any parameters, ``.set`` displays all internal variables and their values:
+The ``.set`` command displays or alters internal *sqlcmd* settings. Without
+any parameters, ``.set`` displays all internal settings and their values:
 
 .. code-block:: text
 
@@ -888,10 +888,10 @@ any parameters, ``.set`` displays all internal variables and their values:
     stacktrace = false
     timings    = true
 
-The supported variables are:
+The supported settings are:
 
     +----------------+---------------------------------------------+----------+
-    | Variable       | Meaning                                     | Default  |
+    | Setting        | Meaning                                     | Default  |
     +================+=============================================+==========+
     | ``autocommit`` | Whether or not each SQL statement           | ``true`` |
     |                | automatically commits to the database. If   |          |

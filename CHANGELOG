@@ -3,10 +3,11 @@ $Id$
 
 Version 0.6 (...)
 
-- Added 'colspacing' variable, allowing control over the column spacing in
+- Added 'colspacing' setting, allowing control over the column spacing in
   result set output.
-- Initial values for variables (i.e., arguments to ".set") can be specified
+- Initial values for settings (i.e., arguments to ".set") can be specified
   in a [settings] section in the configuration file.
+- Fixed some bugs in the handling of shell-style variables.
 
 ---------------------------------------------------------------------------
 Version 0.5 (13 November, 2008)

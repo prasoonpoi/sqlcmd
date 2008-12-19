@@ -219,7 +219,7 @@ class SQLCmdConfig(object):
     def __init__(self, config_dir):
         self.__config = {}
         self.__config_dir = config_dir
-        self.variables = {}
+        self.settings = {}
 
     def total_databases(self):
         return len(self.__config.keys())
@@ -288,9 +288,9 @@ class SQLCmdConfig(object):
         db.add_driver(name, cls)
 
     def __set_vars(self, cfg, section):
-        self.variables_section = section
+        self.settings_section = section
         for option in cfg.options(section):
-            self.variables[option] = cfg.get(section, option)
+            self.settings[option] = cfg.get(section, option)
 
     def add(self, section, alias, host, port, database, type, user, password):
         try:
@@ -553,7 +553,8 @@ class SQLCmd(ECmd):
         self.__partial_cmd_history_start = None
         self.__db_config = None
         self.__history_file = None
-        self.__VARS = {}
+        self.__settings = {}
+        self.__variables = {}
         self.__interactive = True
         self.__in_multiline_command = False
         self.save_history = True
@@ -597,9 +598,9 @@ class SQLCmd(ECmd):
                      'Whether or not to show how SQL statements take.'),
                ]
         for v in vars:
-            self.__VARS[v.name] = v
+            self.__settings[v.name] = v
 
-        self.__variables = self.__init_variables()
+        self.__init_settings_from_config()
 
     def run_file_and_exit(self, file):
         self.__run_file(file)
@@ -619,6 +620,8 @@ class SQLCmd(ECmd):
         if self.__db_config != None:
             try:
                 self.__connect_to(self.__db_config)
+            except AssertionError:
+                traceback.print_exc()
             except:
                 etype, evalue, etb = sys.exc_info()
                 self.__handle_exception(evalue)
@@ -906,9 +909,9 @@ class SQLCmd(ECmd):
             # we just echoed it, and we don't want it to be echoed twice.
 
             echo = self.__flag_is_set('echo')
-            self.__set_variable('echo', False)
+            self.__set_setting('echo', False)
             self.cmdqueue += [line]
-            self.__set_variable('echo', echo)
+            self.__set_setting('echo', echo)
 
     def complete_r(self, text, line, start_index, end_index):
         h = self.__history.get_history_list()
@@ -1068,21 +1071,21 @@ class SQLCmd(ECmd):
     def do_dot_set(self, args):
         """
         Handles a 'sset' command, to set a sqlcmd variable. With no arguments,
-        this command displays all sqlcmd variables and values.
+        this command displays all sqlcmd settings and values.
 
-        Usage: .set [variable value]
+        Usage: .set [setting value]
         """
         self.__echo('.set', args, add_semi=False)
         set_args = args.split()
         total_args = len(set_args)
         if total_args == 0:
-            self.__show_vars()
+            self.__show_vars(self.__settings)
             return
 
         if total_args != 2:
             raise BadCommandError, 'Incorrect number of arguments'
 
-        self.__set_variable(set_args[0], set_args[1])
+        self.__set_setting(set_args[0], set_args[1])
 
     def complete_dot_set(self, text, line, start_index, end_index):
         tokens = line.split()
@@ -1094,7 +1097,7 @@ class SQLCmd(ECmd):
             #
             # Complete the things that can be set
 
-            names = self.__VARS.keys()
+            names = self.__settings.keys()
             names.sort()
             if len(text) == 0:
                 matches = names
@@ -1112,7 +1115,7 @@ class SQLCmd(ECmd):
 
             varname = tokens[1]
             try:
-                var = self.__VARS[varname]
+                var = self.__settings[varname]
                 if var.type == SQLCmd.VAR_TYPES.boolean:
                     matches = ['true', 'false']
 
@@ -1325,7 +1328,7 @@ class SQLCmd(ECmd):
                 if c == '\\':
                     continue
                 new_value.append(c)
-            self.__variables[variable] = ''.join(new_value)
+            self.__variables[variable] = value
 
     def do_dot_run(self, args):
         """
@@ -1444,16 +1447,16 @@ The list of settings, their types, and their meaning follow:
 """
 
         name_width = 0
-        for v in self.__VARS.values():
+        for v in self.__settings.values():
             name_width = max(name_width, len(v.name))
 
-        names = self.__VARS.keys()
+        names = self.__settings.keys()
         names.sort()
         prefix = '    '
         desc_width = MAX_WIDTH - name_width - len(prefix) - 2
         wrapper = textwrap.TextWrapper(width=desc_width)
         for name in names:
-            v = self.__VARS[name]
+            v = self.__settings[name]
             desc = '(%s) %s Default: %s' %\
                    (v.type, v.docstring, v.defaultValue)
             desc = wrapper.wrap(desc)
@@ -1518,9 +1521,9 @@ The list of settings, their types, and their meaning follow:
         if (len(text) > 0) and (text[0] == VARIABLE_REFERENCE_PREFIX):
             if len(text) > 1:
                 text = text[1:]
-                items = [k for k in self.variables.keys() if k.startswith(text)]
+                items = [k for k in self.__variables.keys() if k.startswith(text)]
             else:
-                items = self.variables.keys()
+                items = self.__variables.keys()
 
         return ['$%s' % i for i in items]
 
@@ -1536,20 +1539,28 @@ The list of settings, their types, and their meaning follow:
         finally:
             cursor.close()
 
-    def __show_vars(self):
+    def __show_vars(self, var_dict):
         width = 0
-        for name in self.__VARS.keys():
+        for name in var_dict.keys():
             width = max(width, len(name))
 
-        vars = [name for name in self.__VARS.keys()]
+        vars = [name for name in var_dict.keys()]
         vars.sort()
         for name in vars:
-            v = self.__VARS[name]
+            v = var_dict[name]
             print '%-*s = %s' % (width, v.name, v.strValue())
 
-    def __set_variable(self, varname, value):
-        var = self.__VARS[varname]
-        var.value = value
+    def __set_setting(self, varname, value):
+        try:
+            var = self.__settings[varname]
+            var.set_value_from_string(value)
+
+        except KeyError:
+            raise BadCommandError('No such setting: "%s"' % varname)
+
+        except ValueError:
+            raise BadCommandError('Bad value "%s" for setting"%s".' %
+                                  (value, varname))
 
     def __handle_update(self, command, args):
         try:
@@ -1601,13 +1612,13 @@ The list of settings, their types, and their meaning follow:
             headers += ['%-*s' % (col_sizes[i], col_names[i])]
             rules += ['-' * col_sizes[i]]
 
-        spacing = ' ' * self.__VARS['colspacing'].value
+        spacing = ' ' * self.__settings['colspacing'].value
         print spacing.join(headers)
         print spacing.join(rules)
 
         # Finally, read back the data and dump it.
 
-        max_binary = self.__VARS['binarymax'].value
+        max_binary = self.__settings['binarymax'].value
         if max_binary < 0:
             max_binary = sys.maxint
 
@@ -1681,7 +1692,7 @@ The list of settings, their types, and their meaning follow:
             if cursor.rowcount > 1000:
                 print "Processing result set..."
 
-            max_binary = self.__VARS['binarymax'].value
+            max_binary = self.__settings['binarymax'].value
             if max_binary < 0:
                 max_binary = sys.maxint
 
@@ -1826,23 +1837,11 @@ The list of settings, their types, and their meaning follow:
             total_elapsed = end_elapsed - start_elapsed
             print 'Execution time: %5.3f seconds'  % total_elapsed
 
-    def __set_variable(self, varname, value):
-        try:
-            var = self.__VARS[varname]
-            var.set_value_from_string(value)
-
-        except KeyError:
-            raise BadCommandError('No such variable: "%s"' % varname)
-
-        except ValueError:
-            raise BadCommandError('Bad value "%s" for variable "%s".' %
-                                  (value, varname))
-
-    def __init_variables(self):
+    def __init_settings_from_config(self):
         errors = []
-        for varname, value in self.__config.variables.items():
+        for varname, value in self.__config.settings.items():
             try:
-                self.__set_variable(varname, value)
+                self.__set_setting(varname, value)
             except BadCommandError, ex:
                 errors.append(ex.message)
 
@@ -1881,7 +1880,7 @@ The list of settings, their types, and their meaning follow:
             print '\n%s%s\n' % (cmd, semi)
 
     def __flag_is_set(self, varname):
-        return self.__VARS[varname].value
+        return self.__settings[varname].value
 
     def __save_history(self):
         if (self.__history_file != None) and (self.save_history):
