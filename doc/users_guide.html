@@ -455,9 +455,9 @@ you with. See the <a class="reference external" href="http://www.clapper.org/sof
 details.</p>
 <div class="section" id="the-settings-section">
 <h3><a class="toc-backref" href="#id13">The <tt class="docutils literal"><span class="pre">settings</span></tt> Section</a></h3>
-<p>This optional section can contain initial values for any of the variables
+<p>This optional section can contain initial values for any of the settings
 that are understood by the <a class="reference internal" href="#set">.set</a> command. See <a class="reference internal" href="#set">.set</a> for a full explanation
-of each variable.</p>
+of each setting.</p>
 </div>
 <div class="section" id="the-db-sections">
 <h3><a class="toc-backref" href="#id14">The <tt class="docutils literal"><span class="pre">db.</span></tt> Sections</a></h3>
@@ -857,7 +857,7 @@ the SQL syntax.</p>
 <h3><a class="toc-backref" href="#id21">Timings</a></h3>
 <p>By default, <em>sqlcmd</em> times how long it takes to execute a SQL statement
 and prints the resulting times on the screen. To suppress this behavior,
-set the <tt class="docutils literal"><span class="pre">timings</span></tt> variable to <tt class="docutils literal"><span class="pre">false</span></tt>:</p>
+set the <tt class="docutils literal"><span class="pre">timings</span></tt> setting to <tt class="docutils literal"><span class="pre">false</span></tt>:</p>
 <div class="code-block text">
 <div class="highlight"><pre>.set timings false
 </pre></div>
@@ -870,7 +870,7 @@ set the <tt class="docutils literal"><span class="pre">timings</span></tt> varia
 reasonable behavior when you're using <em>sqlcmd</em> interactively. However, when
 you're loading a file full of <em>sqlcmd</em> statements, you might want each
 statement to be echoed before it is run. To enable command echo, set the
-<tt class="docutils literal"><span class="pre">echo</span></tt> variable to <tt class="docutils literal"><span class="pre">true</span></tt>:</p>
+<tt class="docutils literal"><span class="pre">echo</span></tt> setting to <tt class="docutils literal"><span class="pre">true</span></tt>:</p>
 <div class="code-block text">
 <div class="highlight"><pre>.set echo true
 </pre></div>
@@ -1093,8 +1093,8 @@ returns to its interactive prompt. <tt class="docutils literal"><span class="pre
 </div>
 <div class="section" id="set">
 <h3><a class="toc-backref" href="#id36"><tt class="docutils literal"><span class="pre">.set</span></tt></a></h3>
-<p>The <tt class="docutils literal"><span class="pre">.set</span></tt> command displays or alters internal <em>sqlcmd</em> variables. Without
-any parameters, <tt class="docutils literal"><span class="pre">.set</span></tt> displays all internal variables and their values:</p>
+<p>The <tt class="docutils literal"><span class="pre">.set</span></tt> command displays or alters internal <em>sqlcmd</em> settings. Without
+any parameters, <tt class="docutils literal"><span class="pre">.set</span></tt> displays all internal settings and their values:</p>
 <div class="code-block text">
 <div class="highlight"><pre>? .set
 autocommit = true
@@ -1107,7 +1107,7 @@ timings    = true
 </pre></div>
 
 </div>
-<p>The supported variables are:</p>
+<p>The supported settings are:</p>
 <blockquote>
 <table border="1" class="docutils">
 <colgroup>
@@ -1116,7 +1116,7 @@ timings    = true
 <col width="14%" />
 </colgroup>
 <thead valign="bottom">
-<tr><th class="head">Variable</th>
+<tr><th class="head">Setting</th>
 <th class="head">Meaning</th>
 <th class="head">Default</th>
 </tr>
