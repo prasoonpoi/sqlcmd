@@ -81,6 +81,8 @@ from grizzled import history
 
 from enum import Enum
 
+from sqlcmd.config import SQLCmdConfig, ConfigurationError
+
 # ---------------------------------------------------------------------------
 # Exports
 # ---------------------------------------------------------------------------
@@ -155,65 +157,6 @@ def die(s):
 # Classes
 # ---------------------------------------------------------------------------
 
-class DBInstanceConfigItem(object):
-    """
-    Captures information about a database configuration item read from the
-    .sqlcmd file in the user's home directory.
-    """
-    def __init__(self,
-                 section,
-                 aliases,
-                 host,
-                 database,
-                 user,
-                 password,
-                 type,
-                 port,
-                 on_connect,
-                 config_dir):
-        self.section = section
-        self.aliases = aliases
-        self.primary_alias = aliases[0]
-        self.host = host
-        self.database = database
-        self.user = user
-        self.password = password
-        self.port = port
-        self.db_type = type
-        self.on_connect = None
-
-        if on_connect:
-            if on_connect[0] == '~':
-                on_connect = os.path.expanduser(on_connect)
-
-            if not os.path.isabs(on_connect):
-                on_connect = os.path.abspath(os.path.join(config_dir,
-                                                          on_connect))
-            if not os.access(on_connect, os.R_OK|os.F_OK):
-                log.warning('Database "%s": on-connect script "%s" either '
-                            'does not exist, is not readable, or is not a '
-                            'file.' % (database, on_connect))
-                on_connect = None
-
-            self.on_connect = on_connect
-
-    @property
-    def db_key(self):
-        port = self.port if self.port else ''
-        return '%s|%s|%s|%s' %\
-               (self.host, self.db_type, self.port, self.database)
-
-    def __hash__(self):
-        return self.primary_alias.__hash__()
-
-    def __str__(self):
-        return 'host=%s, db=%s, type=%s' %\
-               (self.host, self.database, self.db_type)
-
-    def __repr__(self):
-        return self.__str__()
-
-class SQLCmdConfig(object):
     """ Data from the .sqlcmd file in the user's home directory"""
 
     def __init__(self, config_dir):
@@ -365,11 +308,6 @@ class NotConnectedError(NonFatalError):
     Thrown to indicate that a SQL operation is attempted when there's no
     active connection to a database.
     """
-    def __init__(self, value):
-        NonFatalError.__init__(self, value)
-
-class ConfigurationError(NonFatalError):
-    """Thrown when bad configuration data is found."""
     def __init__(self, value):
         NonFatalError.__init__(self, value)
 

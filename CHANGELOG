@@ -5,6 +5,7 @@ Version 0.7 (...)
 
 - Pressing interrupt (Ctrl-C) now cancels whatever command is being
   entered.
+- Split configuration classes into a separate submodule.
 
 ---------------------------------------------------------------------------
 Version 0.6 (04 January, 2009)
