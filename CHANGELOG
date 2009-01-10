@@ -1,6 +1,12 @@
 $Id$
 ---------------------------------------------------------------------------
 
+Version 0.7 (...)
+
+- Pressing interrupt (Ctrl-C) now cancels whatever command is being
+  entered.
+
+---------------------------------------------------------------------------
 Version 0.6 (04 January, 2009)
 
 - Added 'colspacing' setting, allowing control over the column spacing in

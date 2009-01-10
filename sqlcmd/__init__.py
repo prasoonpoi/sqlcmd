@@ -86,7 +86,7 @@ from enum import Enum
 # ---------------------------------------------------------------------------
 
 # Info about the module
-__version__   = '0.6'
+__version__   = '0.7'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
 __url__       = 'http://www.clapper.org/software/python/sqlcmd/'
@@ -451,6 +451,12 @@ class ECmd(Cmd):
         """
         Cmd.__init__(self, completekey, stdin, stdout)
 
+    def interrupted(self):
+        """
+        Called by ``cmdloop`` on interrupt.
+        """
+        pass
+
     def cmdloop(self, intro=None):
         """
         Repeatedly issue a prompt, accept input, parse an initial prefix
@@ -486,7 +492,7 @@ class ECmd(Cmd):
                     stop = self.onecmd(line)
                     stop = self.postcmd(stop, line)
                 except KeyboardInterrupt:
-                    print
+                    self.interrupted()
 
             self.postloop()
         finally:
@@ -534,6 +540,8 @@ class SQLCmd(ECmd):
 
     DEFAULT_HISTORY_MAX = history.DEFAULT_MAXLENGTH
     COMMENT_PREFIX = '--'
+    MAIN_PROMPT = '? '
+    CONTINUATION_PROMPT = '> '
     META_COMMAND_PREFIX = '.'
     BINARY_VALUE_MARKER = "<binary>"
     BINARY_FILTER = ''.join([(len(repr(chr(x)))==3) and chr(x) or '?'
@@ -644,6 +652,11 @@ class SQLCmd(ECmd):
         assert(config_item != None)
         self.__db_config = config_item
 
+    def interrupted(self):
+        self.__partial_command = None
+        self.prompt = SQLCmd.MAIN_PROMPT
+        print
+
     def precmd(self, s):
         s = SQLCmdStringTemplate(s).substitute(self.__variables)
         s = s.strip()
@@ -696,7 +709,7 @@ class SQLCmd(ECmd):
             else:
                 self.__partial_command = self.__partial_command + ' ' + s
             s = ""
-            self.prompt = "> "
+            self.prompt = SQLCmd.CONTINUATION_PROMPT
             self.__in_multiline_command = True
 
         else:
@@ -714,7 +727,7 @@ class SQLCmd(ECmd):
             if s[-1] == ';':
                 s = s[:-1]
 
-            self.prompt = "? "
+            self.prompt = SQLCmd.MAIN_PROMPT
 
         return s
 
