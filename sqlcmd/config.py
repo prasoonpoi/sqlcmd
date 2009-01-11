@@ -46,46 +46,21 @@ $Id$
 # Imports
 # ---------------------------------------------------------------------------
 
-from __future__ import with_statement
-
-from cmd import Cmd
 import logging
-import os.path
 import os
 import re
-from StringIO import StringIO
-from string import Template as StringTemplate
 import sys
-import tempfile
-import textwrap
-import time
-import traceback
-import textwrap
 
 from grizzled import db, system
-from grizzled.cmdline import CommandLineParser
 from grizzled.config import Configuration
-from grizzled.log import WrappingLogFormatter
-from grizzled.misc import str2bool
-from grizzled import history
 
-# enum is available from http://cheeseshop.python.org/pypi/enum/
-
-from enum import Enum
+from sqlcmd.exception import *
 
 # ---------------------------------------------------------------------------
 # Exports
 # ---------------------------------------------------------------------------
 
-# Info about the module
-__version__   = '0.7'
-__author__    = 'Brian Clapper'
-__email__     = 'bmc@clapper.org'
-__url__       = 'http://www.clapper.org/software/python/sqlcmd/'
-__copyright__ = '© 2008 Brian M. Clapper'
-__license__   = 'BSD-style license'
-
-__all__ = ['SQLCmd', 'main']
+__all__ = ['SQLCmdConfig']
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -192,7 +167,7 @@ class SQLCmdConfig(object):
     def __config_db(self, cfg, section):
         primary_name = section[3:] # assumes it starts with 'db.'
         if len(primary_name) == 0:
-            raise ConfigurationError, 'Bad database section name "%s"' % section
+            raise ConfigurationError('Bad database section name "%s"' % section)
 
         aliases = cfg.getlist(section, 'aliases', sep=',', optional=True)
         if aliases:
@@ -221,8 +196,9 @@ class SQLCmdConfig(object):
                                             on_connect,
                                             self.__config_dir)
         except ValueError, msg:
-            raise ConfigurationError, \
+            raise ConfigurationError(
                   'Configuration section [%s]: %s' % (section, msg)
+            )
 
         for alias in aliases:
             self.__config[alias] = cfg_item
@@ -241,8 +217,9 @@ class SQLCmdConfig(object):
     def add(self, section, alias, host, port, database, type, user, password):
         try:
             self.__config[alias]
-            raise ConfigurationError, \
-                  'Alias "%s" is already in the configuration' % alias
+            raise ConfigurationError(
+                'Alias "%s" is already in the configuration' % alias
+            )
 
         except KeyError:
             try:
@@ -257,8 +234,9 @@ class SQLCmdConfig(object):
                                            None,
                                            self.__config_dir)
             except ValueError, msg:
-                raise ConfigurationError, \
-                      'Error in configuration for alias "%s": %s' % (alias, msg)
+                raise ConfigurationError(
+                    'Error in configuration for alias "%s": %s' % (alias, msg)
+                )
             self.__config[alias] = cfg
 
     def get(self, alias):
@@ -283,34 +261,14 @@ class SQLCmdConfig(object):
 
             total_matches = len(matches)
             if total_matches == 0:
-                raise ConfigurationError, \
-                      'No configuration item for database "%s"' % alias
+                raise ConfigurationError(
+                    'No configuration item for database "%s"' % alias)
             if total_matches > 1:
-                raise ConfigurationError, \
-                      '%d databases match partial alias "%s": %s' %\
-                      (total_matches, alias, \
-                       ', '.join([cfg.section for cfg in matches.values()]))
+                raise ConfigurationError(
+                    '%d databases match partial alias "%s": %s' %\
+                    (total_matches, alias, \
+                     ', '.join([cfg.section for cfg in matches.values()]))
+                )
             config_item = matches.values()[0]
 
         return config_item
-
-class NonFatalError(Exception):
-    """
-    Exception indicating a non-fatal error. Intended to be a base class.
-    Non-fatal errors are trapped and displayed as error messages within the
-    command interpreter.
-    """
-    def __init__(self, value):
-        self.message = value
-
-    def __str__(self):
-        return str(self.message)
-
-class ConfigurationError(NonFatalError):
-    """Thrown when bad configuration data is found."""
-    def __init__(self, value):
-        NonFatalError.__init__(self, value)
-
-
-if __name__ == '__main__':
-    sys.exit(main())

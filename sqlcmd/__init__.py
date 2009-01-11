@@ -58,7 +58,6 @@ from __future__ import with_statement
 from cmd import Cmd
 import cPickle
 import logging
-import os.path
 import os
 import re
 from StringIO import StringIO
@@ -68,20 +67,18 @@ import tempfile
 import textwrap
 import time
 import traceback
-import textwrap
 
-from grizzled import db, system
+from grizzled import db
 from grizzled.cmdline import CommandLineParser
-from grizzled.config import Configuration
 from grizzled.log import WrappingLogFormatter
 from grizzled.misc import str2bool
 from grizzled import history
 
-# enum is available from http://cheeseshop.python.org/pypi/enum/
-
 from enum import Enum
 
-from sqlcmd.config import SQLCmdConfig, ConfigurationError
+from sqlcmd.config import SQLCmdConfig
+from sqlcmd.exception import *
+from sqlcmd.ecmd import ECmd
 
 # ---------------------------------------------------------------------------
 # Exports
@@ -92,7 +89,7 @@ __version__   = '0.7'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
 __url__       = 'http://www.clapper.org/software/python/sqlcmd/'
-__copyright__ = '© 2008 Brian M. Clapper'
+__copyright__ = '© 2008-2009 Brian M. Clapper'
 __license__   = 'BSD-style license'
 
 __all__ = ['SQLCmd', 'main']
@@ -157,166 +154,6 @@ def die(s):
 # Classes
 # ---------------------------------------------------------------------------
 
-    """ Data from the .sqlcmd file in the user's home directory"""
-
-    def __init__(self, config_dir):
-        self.__config = {}
-        self.__config_dir = config_dir
-        self.settings = {}
-
-    def total_databases(self):
-        return len(self.__config.keys())
-
-    def load_file(self, path):
-        self.path = path
-        if os.access(path, os.R_OK|os.F_OK):
-            cfg = Configuration()
-            cfg.read(path)
-
-            handler_table = (
-                # section name regex       function
-                # --------------------------------------------------
-                (re.compile('^db\.'),      self.__config_db),
-                (re.compile('^driver\.'),  self.__config_driver),
-                (re.compile('^settings$'), self.__set_vars),
-            )
-
-            for section in cfg.sections:
-                for regex, handler in handler_table:
-                    if regex.match(section):
-                        handler(cfg, section)
-
-    def __config_db(self, cfg, section):
-        primary_name = section[3:] # assumes it starts with 'db.'
-        if len(primary_name) == 0:
-            raise ConfigurationError, 'Bad database section name "%s"' % section
-
-        aliases = cfg.getlist(section, 'aliases', sep=',', optional=True)
-        if aliases:
-            aliases = [primary_name] + [a.strip() for a in aliases]
-        else:
-            aliases = []
-
-        host = cfg.get(section, 'host', optional=True)
-        port = cfg.get(section, 'port', optional=True)
-        db_name = cfg.get(section, 'database')
-        user = cfg.get(section, 'user', optional=True)
-        password = cfg.get(section, 'password', optional=True)
-        db_type = cfg.get(section, 'type')
-        on_connect = cfg.get(section, 'onconnect', optional=True)
-
-        aliases += [db_name]
-        try:
-            cfg_item = DBInstanceConfigItem(section,
-                                            aliases,
-                                            host,
-                                            db_name,
-                                            user,
-                                            password,
-                                            db_type,
-                                            port,
-                                            on_connect,
-                                            self.__config_dir)
-        except ValueError, msg:
-            raise ConfigurationError, \
-                  'Configuration section [%s]: %s' % (section, msg)
-
-        for alias in aliases:
-            self.__config[alias] = cfg_item
-
-    def __config_driver(self, cfg, section):
-        class_name = cfg.get(section, 'class')
-        cls = system.class_for_name(class_name)
-        name = cfg.get(section, 'name')
-        db.add_driver(name, cls)
-
-    def __set_vars(self, cfg, section):
-        self.settings_section = section
-        for option in cfg.options(section):
-            self.settings[option] = cfg.get(section, option)
-
-    def add(self, section, alias, host, port, database, type, user, password):
-        try:
-            self.__config[alias]
-            raise ConfigurationError, \
-                  'Alias "%s" is already in the configuration' % alias
-
-        except KeyError:
-            try:
-                cfg = DBInstanceConfigItem(section,
-                                           [alias],
-                                           host,
-                                           database,
-                                           user,
-                                           password,
-                                           type,
-                                           port,
-                                           None,
-                                           self.__config_dir)
-            except ValueError, msg:
-                raise ConfigurationError, \
-                      'Error in configuration for alias "%s": %s' % (alias, msg)
-            self.__config[alias] = cfg
-
-    def get(self, alias):
-        return self.__config[alias]
-
-    def get_aliases(self):
-        aliases = self.__config.keys()
-        aliases.sort()
-        return aliases
-
-    def find_match(self, alias):
-        try:
-            config_item = self.__config[alias]
-            # Exact match. Use that one.
-        except KeyError:
-            # No match. Try to find one or more that come close.
-            matches = {}
-            for a in self.__config.keys():
-                if a.startswith(alias):
-                    config_item = self.__config[a]
-                    matches[config_item.db_key] = config_item
-
-            total_matches = len(matches)
-            if total_matches == 0:
-                raise ConfigurationError, \
-                      'No configuration item for database "%s"' % alias
-            if total_matches > 1:
-                raise ConfigurationError, \
-                      '%d databases match partial alias "%s": %s' %\
-                      (total_matches, alias, \
-                       ', '.join([cfg.section for cfg in matches.values()]))
-            config_item = matches.values()[0]
-
-        return config_item
-
-class NonFatalError(Exception):
-    """
-    Exception indicating a non-fatal error. Intended to be a base class.
-    Non-fatal errors are trapped and displayed as error messages within the
-    command interpreter.
-    """
-    def __init__(self, value):
-        self.message = value
-
-    def __str__(self):
-        return str(self.message)
-
-class NotConnectedError(NonFatalError):
-    """
-    Thrown to indicate that a SQL operation is attempted when there's no
-    active connection to a database.
-    """
-    def __init__(self, value):
-        NonFatalError.__init__(self, value)
-
-class BadCommandError(NonFatalError):
-    """Thrown to indicate bad input from the user."""
-    def __init__(self, value):
-        NonFatalError.__init__(self, value)
-
-
 class Variable(object):
     """Captures information about a sqlcmd variable."""
     def __init__(self,
@@ -369,94 +206,6 @@ class Variable(object):
 
     def __hash__(self):
         return self.name.__hash__()
-
-class ECmd(Cmd):
-    """
-    Slightly enhanced version of ``cmd.Cmd`` that changes the command loop
-    a little to handle SIGINT more appropriately.
-    """
-    def __init__(self, completekey='tab', stdin=None, stdout=None):
-        """
-        Instantiate a line-oriented interpreter framework.
-
-        The optional argument 'completekey' is the readline name of a
-        completion key; it defaults to the Tab key. If completekey is
-        not None and the readline module is available, command completion
-        is done automatically. The optional arguments stdin and stdout
-        specify alternate input and output file objects; if not specified,
-        sys.stdin and sys.stdout are used.
-
-        """
-        Cmd.__init__(self, completekey, stdin, stdout)
-
-    def interrupted(self):
-        """
-        Called by ``cmdloop`` on interrupt.
-        """
-        pass
-
-    def cmdloop(self, intro=None):
-        """
-        Repeatedly issue a prompt, accept input, parse an initial prefix
-        off the received input, and dispatch to action methods, passing them
-        the remainder of the line as argument.
-
-        This version is a direct rip-off of the parent class's ``cmdloop()``
-        method, with some changes to support SIGINT properly.
-        """
-        self.preloop()
-        if self.use_rawinput and self.completekey:
-            try:
-                import readline
-                self.old_completer = readline.get_completer()
-                readline.set_completer(self.complete)
-                readline.parse_and_bind(self.completekey+": complete")
-            except ImportError:
-                pass
-        try:
-            if intro is not None:
-                self.intro = intro
-            if self.intro:
-                self.stdout.write(str(self.intro)+"\n")
-            stop = None
-            while not stop:
-                try:
-                    if self.cmdqueue:
-                        line = self.cmdqueue.pop(0)
-                    else:
-                        line = self.get_input(self.prompt)
-
-                    line = self.precmd(line)
-                    stop = self.onecmd(line)
-                    stop = self.postcmd(stop, line)
-                except KeyboardInterrupt:
-                    self.interrupted()
-
-            self.postloop()
-        finally:
-            if self.use_rawinput and self.completekey:
-                try:
-                    import readline
-                    readline.set_completer(self.old_completer)
-                except ImportError:
-                    pass
-
-    def get_input(self, prompt):
-        if self.use_rawinput:
-            try:
-                line = raw_input(self.prompt)
-            except EOFError:
-                line = 'EOF'
-        else:
-            self.stdout.write(self.prompt)
-            self.stdout.flush()
-            line = self.stdin.readline()
-            if not len(line):
-                line = 'EOF'
-            else:
-                line = line[:-1] # chop \n
-
-        return line
 
 class SQLCmdStringTemplate(StringTemplate):
     idpattern = VARIABLE_RE
@@ -2055,6 +1804,10 @@ class Main(object):
 
         root_logger = logging.getLogger('')
         root_logger.handlers = handlers
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
     sys.exit(main())

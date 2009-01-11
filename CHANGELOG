@@ -5,7 +5,8 @@ Version 0.7 (...)
 
 - Pressing interrupt (Ctrl-C) now cancels whatever command is being
   entered.
-- Split configuration classes into a separate submodule.
+- Moved various classes in __init__.py into separate modules, for ease
+  of maintenance.
 
 ---------------------------------------------------------------------------
 Version 0.6 (04 January, 2009)
