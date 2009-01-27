@@ -1006,7 +1006,9 @@ class SQLCmd(ECmd):
                name=value
         """
         match = VARIABLE_ASSIGNMENT_RE.match(args)
-        assert match  # Otherwise, this is a bug
+        if not match:
+            raise BadCommandError('Illegal .var command.')
+
         variable = match.group(1)
         value = match.group(2)
 

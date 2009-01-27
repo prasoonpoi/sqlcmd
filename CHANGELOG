@@ -7,6 +7,7 @@ Version 0.7 (...)
   entered.
 - Moved various classes in __init__.py into separate modules, for ease
   of maintenance.
+- Fixed syntax checks on .var command.
 
 ---------------------------------------------------------------------------
 Version 0.6 (04 January, 2009)
