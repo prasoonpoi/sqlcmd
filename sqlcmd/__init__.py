@@ -871,6 +871,7 @@ class SQLCmd(ECmd):
         'arg' can be:
 
         - "tables" to show the list of tables in the database
+        - "database" to show information about the database
         """
         if args.lower() == 'tables':
             self.__echo('.show', args, add_semi=False)

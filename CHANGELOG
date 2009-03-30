@@ -8,6 +8,8 @@ Version 0.7 (...)
 - Moved various classes in __init__.py into separate modules, for ease
   of maintenance.
 - Fixed syntax checks on .var command.
+- ".show tables" on Oracle will now show non-system tables that belong to
+  all users, not just the user who's logged in.
 
 ---------------------------------------------------------------------------
 Version 0.6 (04 January, 2009)
