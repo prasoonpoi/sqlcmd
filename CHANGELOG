@@ -1,7 +1,6 @@
-
+sqlcmd Change Log
 ---------------------------------------------------------------------------
-
-Version 0.7 (...)
+Version 0.7 (26 May, 2009)
 
 - Pressing interrupt (Ctrl-C) now cancels whatever command is being
   entered.
