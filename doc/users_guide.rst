@@ -931,18 +931,53 @@ The supported settings are:
 ~~~~~~~~~
 
 The ``.show`` command displays certain information about the currently
-connected database. Currently, it supports two distinct parameters:
+connected database. Currently, it supports two sub-commands:
 
+``.show database``
+++++++++++++++++++
 
-    +----------------+--------------------------------------------------------+
-    | Parameter      | Meaning                                                |
-    +================+========================================================+
-    | ``database``   | Show information about the current database, including |
-    |                | database location, RDBMS vendor, RDBMS version, etc.   |
-    +----------------+--------------------------------------------------------+
-    | ``tables``     | Show the list of user-visible (i.e., non-system)       |
-    |                | tables in the current database.                        |
-    +----------------+--------------------------------------------------------+
+Show information about the current connected database, including database
+location, RDBMS vendor, and RDBMS version.
+
+``.show tables``
+++++++++++++++++
+
+Show the list  of user-visible (i.e., non-system) tables in the current
+database. This sub-command takes an additional, optional, filter parameter.
+The filter is a regular expression; all tables not matching the filter are
+not shown. For example:
+
+.. code-block:: sql
+
+    ? .show tables
+    all_users
+    foo
+    fool
+    tb_bar
+    tb_foo
+    userlocation
+    ? .show tables ^tb
+    tb_bar
+    tb_foo
+    ? .show tables tb
+    tb_bar
+    tb_foo
+    ? .show tables ^.*foo
+    foo
+    fool
+    tb_foo
+    ? .show tables .*foo
+    foo
+    fool
+    tb_foo
+    ? .show tables .*foo$
+    foo
+    tb_foo
+    ? .show tables foo$
+    foo
+
+As you can see from the example, the regular expression is implicitly anchored
+to the beginning of the table name.
 
 ``.var``
 ~~~~~~~~

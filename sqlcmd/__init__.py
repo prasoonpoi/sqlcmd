@@ -237,6 +237,8 @@ class SQLCmd(ECmd):
     NO_SEMI_NEEDED = set(['help', '?', 'r', 'begin', 'commit', 'rollback',
                           'eof'])
 
+    NO_VAR_SUB = set(['.show'])
+
     VAR_TYPES = Enum('boolean', 'string', 'integer')
 
     def __init__(self, cfg):
@@ -345,11 +347,16 @@ class SQLCmd(ECmd):
         print
 
     def precmd(self, s):
-        s = SQLCmdStringTemplate(s).substitute(self.__variables)
-        s = s.strip()
         tokens = s.split(None, 1)
         if len(tokens) == 0:
-            return s
+            return ''
+
+        if not (tokens[0] in SQLCmd.NO_VAR_SUB):
+            s = SQLCmdStringTemplate(s).substitute(self.__variables)
+
+        s = s.strip()
+        # Split again, now that we've substituted.
+        tokens = s.split(None, 1)
 
         if len(tokens) == 1:
             first = s
@@ -473,32 +480,62 @@ class SQLCmd(ECmd):
             sys.stdout = old_sys_stdout
             help = buf.getvalue()
             if not help:
-                self.stdout.write("%s\n"%str(self.nohelp % (arg,)))
-                return
+                help = "%s\n" % str(self.nohelp % (arg,))
 
             lines = help.split('\n')
+            # Trim leading and trailing blank lines.
 
-            # Figure out the indentation of the first non-blank line.
-            # Also, swallow trailing empty lines.
+            def ltrim(lines):
+                """
+                Recursive function to trim (in place) leading blank lines from
+                an array of lines.
+                """
+                if len(lines) == 0:
+                    return
+                if len(lines[0]) > 0:
+                    return
+                del lines[0]
+                ltrim(lines)
+
+            def rtrim(lines):
+                """
+                Recursive function to trim (in place) trailing blank lines
+                from an array of lines
+                """
+                if len(lines) == 0:
+                    return
+                if len(lines[-1]) > 0:
+                    return
+                del lines[-1]
+                rtrim(lines)
+
+            # Figure out initial indent.
             indent = 0
-            empty_lines = 0
+            first_non_blank = None
             for line in lines:
-                if len(line.strip()) == 0:
-                    empty_lines += 1
-                else:
-                    if empty_lines:
-                        self.stdout.write('\n' * empty_lines)
-                        empty_lines = 0
+                if len(line) > 0:
+                    first_non_blank = line
+                    break
 
-                    indent = 0
-                    for c in line:
-                        if c in (' ', '\t'):
-                            indent += 1
-                        else:
-                            break
-                    self.stdout.write('    %s\n' % line[indent:])
-                    
-            # One last blank line at the end.
+            if first_non_blank:
+                for c in first_non_blank:
+                    # Assumes no tabs.
+                    if c == ' ':
+                        indent += 1
+                    else:
+                        break
+
+            prefix = ' ' * indent
+            new_lines = []
+            for line in lines:
+                if line.startswith(prefix):
+                    new_lines.append(line[len(prefix):])
+                else:
+                    new_lines.append(line)
+
+            ltrim(new_lines)
+            rtrim(new_lines)
+            self.stdout.write('\n'.join(new_lines))
             self.stdout.write('\n')
 
         finally:
@@ -568,9 +605,9 @@ class SQLCmd(ECmd):
 
         where 'num' is the number of the command to re-run, as shown in the
         'history' display. 'string' is a substring to match against the
-        command history; for instance, 'r select' attempts to run the
-        last command starting with 'select'. If called with no arguments,
-        just re-run the last command.
+        command history; for instance, 'r select' attempts to run the last
+        command starting with 'select'. If called with no arguments, just
+        re-run the last command.
         """
         do_r(args)
 
@@ -578,14 +615,14 @@ class SQLCmd(ECmd):
         """
         Re-run a command.
 
-        Usage: r [num]
-               redo [num]
+        Usage: r [num|string]
+               redo [num|string]
 
         where 'num' is the number of the command to re-run, as shown in the
         'history' display. 'string' is a substring to match against the
-        command history; for instance, 'r select' attempts to run the
-        last command starting with 'select'. If called with no arguments,
-        just re-run the last command.
+        command history; for instance, 'r select' attempts to run the last
+        command starting with 'select'. If called with no arguments, just
+        re-run the last command.
         """
         a = args.split()
         if len(a) > 1:
@@ -864,21 +901,39 @@ class SQLCmd(ECmd):
 
     def do_dot_show(self, args):
         """
-        Run the ".show" command. General form:
+        Run the ".show" command. There are several subcommands.
 
-            .show arg
+        .show database           Show information about the connected database.
 
-        'arg' can be:
-
-        - "tables" to show the list of tables in the database
-        - "database" to show information about the database
+        .show tables [regexp]    Show the names of all tables. If <regexp> is
+                                 supplied, show only those tables whose names
+                                 match the regular expression.
         """
-        if args.lower() == 'tables':
+        tokens = args.split(None)
+        if len(tokens) == 0:
+            raise BadCommandError('Missing argument(s) to ".show".')
+
+        cmd = tokens[0]
+        if cmd.lower() == 'tables':
+            if len(tokens) > 2:
+                raise BadCommandError('Usage: .show tables [regexp]')
+            elif len(tokens) == 1:
+                match_table = lambda name: True
+            else:
+                try:
+                    r = re.compile(tokens[1])
+                    match_table = lambda name: r.match(name)
+                except re.error, ex:
+                    raise BadCommandError('"%s" is a bad regular '
+                                          'expression: %s' %
+                                          (tokens[1], ex.message))
+
             self.__echo('.show', args, add_semi=False)
             for table in self.__get_tables():
-                print table
+                if match_table(table):
+                    print table
 
-        elif args.lower() == 'database':
+        elif cmd.lower() == 'database':
             self.__echo('.show', args, add_semi=False)
             self.__ensure_connected()
             wrapper = textwrap.TextWrapper(width=MAX_WIDTH,
@@ -898,8 +953,8 @@ class SQLCmd(ECmd):
                 cursor.close()
 
         else:
-            raise BadCommandError, \
-                  'Unknown argument(s) to command ".show": %s' % args
+            raise BadCommandError('Unknown argument(s) to command ".show": '
+                                  '%s' % args)
 
     def complete_dot_show(self, text, line, start_index, end_index):
         possibilities = ['tables', 'database']

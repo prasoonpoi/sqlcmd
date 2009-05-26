@@ -10,6 +10,9 @@ Version 0.7 (...)
 - Fixed syntax checks on .var command.
 - ".show tables" on Oracle will now show non-system tables that belong to
   all users, not just the user who's logged in.
+- ".show tables" now accepts a third regular expression filter parameter,
+  allowing list of returned tables to be restricted to those matching
+  the regular expression.
 
 ---------------------------------------------------------------------------
 Version 0.6 (04 January, 2009)
