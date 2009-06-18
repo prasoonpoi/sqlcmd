@@ -1,5 +1,10 @@
 sqlcmd Change Log
 ---------------------------------------------------------------------------
+Version 0.7.1 (...)
+
+- Updated to latest version of ez_setup.py
+
+---------------------------------------------------------------------------
 Version 0.7 (26 May, 2009)
 
 - Pressing interrupt (Ctrl-C) now cancels whatever command is being
