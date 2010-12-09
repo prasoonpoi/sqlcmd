@@ -1,6 +1,12 @@
 # sqlcmd: A SQL command interpreter
 
-This is _sqlcmd_, a SQL command interpreter. See the User's Guide for complete details.
+This is _sqlcmd_, a SQL command interpreter. See the [User's Guide][] for
+complete details.
+
+**NOTICE: I no longer maintain _sqlcmd_. It has been superceded by my 
+Scala-based [sqlshell][] tool.**
+
+[sqlshell]: http://bmc.github.com/sqlshell/
 
 To install _sqlcmd_ in the default location, type:
 
@@ -9,7 +15,5 @@ To install _sqlcmd_ in the default location, type:
 To install it somewhere else, such as your home directory, type:
 
     python setup.py install --prefix=$HOME
-
-For more information, see the [User's Guide][].
 
 [User's Guide]: https://github.com/bmc/sqlcmd/blob/master/doc/users_guide.rst
