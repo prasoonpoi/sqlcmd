@@ -15,7 +15,7 @@ Requires:
 
 COPYRIGHT AND LICENSE
 
-Copyright © 2008 Brian M. Clapper
+Copyright © 2008-2011 Brian M. Clapper
 
 This is free software, released under the following BSD-like license:
 
@@ -88,8 +88,8 @@ from sqlcmd.ecmd import ECmd
 __version__   = '0.7.1'
 __author__    = 'Brian Clapper'
 __email__     = 'bmc@clapper.org'
-__url__       = 'http://www.clapper.org/software/python/sqlcmd/'
-__copyright__ = '© 2008-2009 Brian M. Clapper'
+__url__       = 'https://github.com/bmc/sqlcmd/'
+__copyright__ = '© 2008-2011 Brian M. Clapper'
 __license__   = 'BSD-style license'
 
 __all__ = ['SQLCmd', 'main']

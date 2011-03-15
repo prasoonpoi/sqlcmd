@@ -5,8 +5,6 @@
 # $Id$
 # ---------------------------------------------------------------------------
 
-import ez_setup
-ez_setup.use_setuptools(download_delay=2)
 from setuptools import setup, find_packages
 import re
 import sys
@@ -27,7 +25,8 @@ def loadInfo():
 info = loadInfo()
 
 LONG_DESCRIPTION = \
-'''*sqlcmd* is a SQL command line tool, similar in concept to tools like Oracle's
+"""
+*sqlcmd* is a SQL command line tool, similar in concept to tools like Oracle's
 `SQL*Plus`_, the PostgreSQL_ ``psql`` command, and MySQL_'s ``mysql`` tool.
 
 .. _SQL*Plus: http://www.oracle.com/technology/docs/tech/sql_plus/index.html
@@ -63,7 +62,11 @@ Some features at a glance
 
 In short, *sqlcmd* is a SQL command tool that attempts to provide the same
 interface for all supported databases and across all platforms.
-'''
+"""
+
+NAME = 'sqlcmd'
+DOWNLOAD_URL = ('http://pypi.python.org/packages/source/s/%s/%s-%s.tar.gz' %
+                (NAME, NAME, info['__version__']))
 
 # Now the setup stuff.
 
@@ -73,13 +76,12 @@ setup(
     description      = 'A cross-platform, cross-database SQL command line tool',
     long_description = LONG_DESCRIPTION,
     packages         = find_packages(),
-    py_modules       = ['ez_setup'],
     url              = info['__url__'],
     license          = info['__license__'],
     author           = info['__author__'],
     author_email     = info['__email__'],
     entry_points     = {'console_scripts' : 'sqlcmd=sqlcmd:main'},
-    install_requires = ['grizzled>=0.9.2', 
+    install_requires = ['grizzled-python>=1.0', 
                         'enum>=0.4.3',],
     classifiers      = ['Environment :: Console',
                         'Intended Audience :: Developers',
