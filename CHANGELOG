@@ -1,6 +1,6 @@
 sqlcmd Change Log
 ---------------------------------------------------------------------------
-Version 0.7.1 (...)
+Version 0.7.1 (11 March, 2011)
 
 - Removed setup.py dependency on ez_setup.
 - Changed to refer to 'grizzled-python', instead of 'grizzled'
